@@ -95,7 +95,7 @@ class BankController extends Controller
 
         Bank::create($validated);
 
-        return back()->with('success', "Bank {$validated['name']} berhasil ditambahkan.");
+        return to_route('admin.banks.index')->with('success', "Bank {$validated['name']} berhasil ditambahkan.");
     }
 
     /**
@@ -122,7 +122,7 @@ class BankController extends Controller
 
         $bank->update($validated);
 
-        return back()->with('success', "Bank {$bank->name} berhasil diperbarui.");
+        return to_route('admin.banks.index')->with('success', "Bank {$bank->name} berhasil diperbarui.");
     }
 
     /**
@@ -147,6 +147,6 @@ class BankController extends Controller
         $name = $bank->name;
         $bank->delete();
 
-        return back()->with('success', "Bank {$name} berhasil dihapus.");
+        return to_route('admin.banks.index')->with('success', "Bank {$name} berhasil dihapus.");
     }
 }

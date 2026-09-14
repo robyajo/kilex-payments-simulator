@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bank;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\VirtualAccountGenerator;
@@ -24,7 +25,7 @@ class SimulatorTestController extends Controller
         $merchant = $user->getOrCreateDefaultMerchant();
         $apiKey = $merchant->getOrCreateApiKey();
 
-        $activeBanks = \App\Models\Bank::where('is_active', true)->orderBy('name', 'asc')->get();
+        $activeBanks = Bank::where('is_active', true)->orderBy('name', 'asc')->get();
 
         return Inertia::render('simulator/create', [
             'merchant' => [

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Simulator;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\SendMidtransNotificationJob;
+use App\Models\Bank;
 use App\Models\Transaction;
 use App\Services\VirtualAccountGenerator;
 use Illuminate\Http\JsonResponse;
@@ -45,7 +46,7 @@ class SimulatorPageController extends Controller
         $merchant = $transaction->merchant;
 
         // Fetch active banks from database
-        $activeBanks = \App\Models\Bank::where('is_active', true)->orderBy('name', 'asc')->get();
+        $activeBanks = Bank::where('is_active', true)->orderBy('name', 'asc')->get();
 
         $bankOptions = [];
         $bankList = [];

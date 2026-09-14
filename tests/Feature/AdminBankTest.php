@@ -110,7 +110,7 @@ test('admin can toggle active status of a bank', function () {
 
     $this->actingAs($admin);
 
-    $response = $this->patch(route('admin.banks.toggle-active', $bank));
+    $response = $this->post(route('admin.banks.toggle', $bank));
 
     $response->assertRedirect();
     $this->assertDatabaseHas('banks', [
@@ -118,7 +118,7 @@ test('admin can toggle active status of a bank', function () {
         'is_active' => 0,
     ]);
 
-    $response2 = $this->patch(route('admin.banks.toggle-active', $bank));
+    $response2 = $this->post(route('admin.banks.toggle', $bank));
     $response2->assertRedirect();
     $this->assertDatabaseHas('banks', [
         'id' => $bank->id,

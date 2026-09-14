@@ -21,7 +21,7 @@ class BankFactory extends Factory
 
         return [
             'code' => $code,
-            'name' => strtoupper($code) . ' Virtual Account',
+            'name' => strtoupper($code).' Virtual Account',
             'va_prefix' => (string) fake()->numberBetween(1000, 9999),
             'biller_code' => null,
             'bill_key_prefix' => null,

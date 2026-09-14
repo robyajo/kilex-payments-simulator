@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BankController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\SettingController;
 use App\Http\Controllers\Dashboard\SimulatorTestController;
@@ -38,11 +39,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Administrator Virtual Account Bank Management
     Route::middleware(['admin'])->prefix('dashboard/admin')->name('admin.')->group(function () {
-        Route::get('/banks', [\App\Http\Controllers\Admin\BankController::class, 'index'])->name('banks.index');
-        Route::post('/banks', [\App\Http\Controllers\Admin\BankController::class, 'store'])->name('banks.store');
-        Route::put('/banks/{bank}', [\App\Http\Controllers\Admin\BankController::class, 'update'])->name('banks.update');
-        Route::post('/banks/{bank}/toggle', [\App\Http\Controllers\Admin\BankController::class, 'toggleActive'])->name('banks.toggle');
-        Route::delete('/banks/{bank}', [\App\Http\Controllers\Admin\BankController::class, 'destroy'])->name('banks.destroy');
+        Route::get('/banks', [BankController::class, 'index'])->name('banks.index');
+        Route::post('/banks', [BankController::class, 'store'])->name('banks.store');
+        Route::put('/banks/{bank}', [BankController::class, 'update'])->name('banks.update');
+        Route::post('/banks/{bank}/toggle', [BankController::class, 'toggleActive'])->name('banks.toggle');
+        Route::delete('/banks/{bank}', [BankController::class, 'destroy'])->name('banks.destroy');
     });
 });
 
