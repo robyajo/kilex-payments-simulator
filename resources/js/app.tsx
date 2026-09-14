@@ -16,6 +16,7 @@ void createInertiaApp({
             case name.startsWith('public/'):
             case name.startsWith('snap/'):
             case name === 'dashboard':
+            case name.startsWith('admin/'):
             case name.startsWith('transactions/'):
             case name.startsWith('simulator/'):
             case name === 'settings/api-keys':

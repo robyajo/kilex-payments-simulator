@@ -28,6 +28,22 @@ interface BankInfo {
     biller_code?: string;
 }
 
+interface BankItemData {
+    id: string;
+    code: string;
+    name: string;
+    va_prefix: string;
+    biller_code?: string;
+    bill_key_prefix?: string;
+    logo_url?: string;
+    badge_color?: string;
+    va_number?: string;
+    bill_key?: string;
+    instruction_atm?: string;
+    instruction_mbanking?: string;
+    instruction_ibanking?: string;
+}
+
 interface Props {
     transaction: {
         id: string;
@@ -41,8 +57,8 @@ interface Props {
         payment_code?: string;
         qr_string?: string;
         transaction_status: string;
-        status_code: string;
-        status_message: string;
+        status_code?: string;
+        status_message?: string;
         customer_details?: {
             first_name?: string;
             last_name?: string;
@@ -70,18 +86,20 @@ interface Props {
         notification_url?: string;
     };
     bankOptions: Record<string, BankInfo>;
+    bankList?: BankItemData[];
 }
 
 export default function PaymentMock({
     transaction,
     merchant,
     bankOptions,
+    bankList = [],
 }: Props) {
     const [selectedTab, setSelectedTab] = useState<
         "va" | "qris" | "ewallet" | "cstore"
     >("va");
     const [selectedBank, setSelectedBank] = useState<string>(
-        transaction.bank || "bca",
+        transaction.bank || (bankList[0]?.code ?? "bca"),
     );
     const [copied, setCopied] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -91,6 +109,18 @@ export default function PaymentMock({
     const [timeLeft, setTimeLeft] = useState<string>("");
     const [showItems, setShowItems] = useState(false);
     const [redirectTimer, setRedirectTimer] = useState<number>(5);
+
+    const availableBanks: BankItemData[] = bankList.length > 0 ? bankList : [
+        { id: "bca", code: "bca", name: "BCA Virtual Account", va_prefix: "70014" },
+        { id: "bni", code: "bni", name: "BNI Virtual Account", va_prefix: "8808" },
+        { id: "bri", code: "bri", name: "BRI Virtual Account (BRIVA)", va_prefix: "0201" },
+        { id: "mandiri", code: "mandiri", name: "Mandiri Bill Payment", va_prefix: "70012", biller_code: "70012", bill_key_prefix: "99" },
+        { id: "permata", code: "permata", name: "Permata VA", va_prefix: "8778" },
+        { id: "cimb", code: "cimb", name: "CIMB Niaga VA", va_prefix: "5919" },
+    ];
+
+    const activeBank = availableBanks.find((b) => b.code === selectedBank) || availableBanks[0];
+    const activeBankOption = bankOptions[selectedBank] || bankOptions[availableBanks[0]?.code] || bankOptions["bca"];
 
     const formatRupiah = (amount: number) => {
         return new Intl.NumberFormat("id-ID", {
@@ -215,8 +245,6 @@ export default function PaymentMock({
             setActionLoading(null);
         }
     };
-
-    const activeBank = bankOptions[selectedBank] || bankOptions["bca"];
 
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans selection:bg-blue-500/30 selection:text-blue-300">
@@ -545,58 +573,43 @@ export default function PaymentMock({
                                     {/* Bank Selector */}
                                     <div>
                                         <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2">
-                                            Pilih Bank Virtual Account
+                                            Pilih Bank Virtual Account ({availableBanks.length} Kanal Tersedia)
                                         </label>
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                                            {[
-                                                {
-                                                    id: "bca",
-                                                    name: "BCA Virtual Account",
-                                                    badge: "BCA",
-                                                },
-                                                {
-                                                    id: "bni",
-                                                    name: "BNI Virtual Account",
-                                                    badge: "BNI",
-                                                },
-                                                {
-                                                    id: "bri",
-                                                    name: "BRI Virtual Account (BRIVA)",
-                                                    badge: "BRI",
-                                                },
-                                                {
-                                                    id: "mandiri",
-                                                    name: "Mandiri Bill Payment",
-                                                    badge: "Mandiri",
-                                                },
-                                                {
-                                                    id: "permata",
-                                                    name: "Permata VA",
-                                                    badge: "Permata",
-                                                },
-                                                {
-                                                    id: "cimb",
-                                                    name: "CIMB Niaga VA",
-                                                    badge: "CIMB",
-                                                },
-                                            ].map((bank) => (
+                                            {availableBanks.map((bank) => (
                                                 <button
                                                     key={bank.id}
                                                     type="button"
                                                     onClick={() =>
-                                                        setSelectedBank(bank.id)
+                                                        setSelectedBank(bank.code)
                                                     }
-                                                    className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
-                                                        selectedBank === bank.id
+                                                    className={`p-3 rounded-xl border text-left flex items-center justify-between gap-2 transition-all cursor-pointer ${
+                                                        selectedBank === bank.code
                                                             ? "border-blue-500 bg-blue-950/30 text-white ring-1 ring-blue-500/50"
                                                             : "border-neutral-800 bg-neutral-950/40 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200"
                                                     }`}
                                                 >
-                                                    <span className="text-xs font-medium">
-                                                        {bank.name}
-                                                    </span>
-                                                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
-                                                        {bank.badge}
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        {bank.logo_url ? (
+                                                            <div className="size-6 rounded-md bg-white p-0.5 shrink-0 flex items-center justify-center overflow-hidden">
+                                                                <img
+                                                                    src={bank.logo_url}
+                                                                    alt={bank.name}
+                                                                    className="size-full object-contain"
+                                                                    onError={(e) => {
+                                                                        (e.target as HTMLElement).style.display = 'none';
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <CreditCard className="size-4 text-blue-400 shrink-0" />
+                                                        )}
+                                                        <span className="text-xs font-medium truncate">
+                                                            {bank.name}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 uppercase shrink-0">
+                                                        {bank.code}
                                                     </span>
                                                 </button>
                                             ))}
@@ -605,30 +618,26 @@ export default function PaymentMock({
 
                                     {/* Virtual Account Detail Box */}
                                     <div className="p-5 rounded-xl bg-neutral-950 border border-neutral-800/80 space-y-4">
-                                        {selectedBank === "mandiri" ? (
+                                        {activeBank?.biller_code || selectedBank === "mandiri" ? (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
                                                     <div className="text-[11px] font-semibold text-neutral-400 uppercase">
-                                                        Kode Perusahaan (Biller
-                                                        Code)
+                                                        Kode Perusahaan (Biller Code)
                                                     </div>
                                                     <div className="flex items-center justify-between mt-1">
                                                         <span className="text-xl font-mono font-bold text-amber-400">
-                                                            {activeBank?.biller_code ||
-                                                                "70012"}
+                                                            {activeBank?.biller_code || activeBankOption?.biller_code || "70012"}
                                                         </span>
                                                         <button
                                                             onClick={() =>
                                                                 handleCopy(
-                                                                    activeBank?.biller_code ||
-                                                                        "70012",
+                                                                    activeBank?.biller_code || activeBankOption?.biller_code || "70012",
                                                                     "Biller Code",
                                                                 )
                                                             }
                                                             className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-colors"
                                                         >
-                                                            {copied ===
-                                                            "Biller Code" ? (
+                                                            {copied === "Biller Code" ? (
                                                                 <Check className="size-4 text-emerald-400" />
                                                             ) : (
                                                                 <Copy className="size-4" />
@@ -638,26 +647,22 @@ export default function PaymentMock({
                                                 </div>
                                                 <div>
                                                     <div className="text-[11px] font-semibold text-neutral-400 uppercase">
-                                                        Nomor Pelanggan (Bill
-                                                        Key)
+                                                        Nomor Pelanggan (Bill Key)
                                                     </div>
                                                     <div className="flex items-center justify-between mt-1">
                                                         <span className="text-xl font-mono font-bold text-blue-400">
-                                                            {activeBank?.bill_key ||
-                                                                "9912345678"}
+                                                            {activeBank?.bill_key || activeBankOption?.bill_key || "9912345678"}
                                                         </span>
                                                         <button
                                                             onClick={() =>
                                                                 handleCopy(
-                                                                    activeBank?.bill_key ||
-                                                                        "9912345678",
+                                                                    activeBank?.bill_key || activeBankOption?.bill_key || "9912345678",
                                                                     "Bill Key",
                                                                 )
                                                             }
                                                             className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-colors"
                                                         >
-                                                            {copied ===
-                                                            "Bill Key" ? (
+                                                            {copied === "Bill Key" ? (
                                                                 <Check className="size-4 text-emerald-400" />
                                                             ) : (
                                                                 <Copy className="size-4" />
@@ -668,35 +673,31 @@ export default function PaymentMock({
                                             </div>
                                         ) : (
                                             <div>
-                                                <div className="text-[11px] font-semibold text-neutral-400 uppercase">
-                                                    Nomor Virtual Account (
-                                                    {selectedBank.toUpperCase()}
-                                                    )
+                                                <div className="text-[11px] font-semibold text-neutral-400 uppercase flex items-center justify-between">
+                                                    <span>Nomor Virtual Account ({activeBank?.name || selectedBank.toUpperCase()})</span>
+                                                    {activeBank?.va_prefix && (
+                                                        <span className="text-[10px] font-mono text-neutral-500">Prefix: {activeBank.va_prefix}</span>
+                                                    )}
                                                 </div>
                                                 <div className="flex items-center justify-between mt-1">
                                                     <span className="text-2xl sm:text-3xl font-mono font-bold tracking-wider text-blue-400">
-                                                        {activeBank?.va_number ||
-                                                            "700141234567890"}
+                                                        {activeBank?.va_number || activeBankOption?.va_number || "700141234567890"}
                                                     </span>
                                                     <button
                                                         onClick={() =>
                                                             handleCopy(
-                                                                activeBank?.va_number ||
-                                                                    "",
+                                                                activeBank?.va_number || activeBankOption?.va_number || "",
                                                                 "Nomor VA",
                                                             )
                                                         }
                                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border border-blue-500/30 text-xs font-semibold transition-all cursor-pointer"
                                                     >
-                                                        {copied ===
-                                                        "Nomor VA" ? (
+                                                        {copied === "Nomor VA" ? (
                                                             <Check className="size-3.5 text-emerald-400" />
                                                         ) : (
                                                             <Copy className="size-3.5" />
                                                         )}
-                                                        {copied === "Nomor VA"
-                                                            ? "Tersalin"
-                                                            : "Salin Nomor"}
+                                                        {copied === "Nomor VA" ? "Tersalin" : "Salin Nomor"}
                                                     </button>
                                                 </div>
                                             </div>
@@ -713,39 +714,41 @@ export default function PaymentMock({
                                     </div>
 
                                     {/* Step by step Instructions */}
-                                    <div className="p-4 rounded-xl bg-neutral-950/40 border border-neutral-800/60 text-xs text-neutral-300 space-y-2">
+                                    <div className="p-4 rounded-xl bg-neutral-950/40 border border-neutral-800/60 text-xs text-neutral-300 space-y-2.5">
                                         <div className="font-semibold text-neutral-200">
-                                            Cara Pembayaran (Simulasi ATM /
-                                            M-Banking):
+                                            Cara Pembayaran ({activeBank?.name || selectedBank.toUpperCase()}):
                                         </div>
-                                        <ol className="list-decimal list-inside space-y-1 text-neutral-400">
-                                            <li>
-                                                Buka aplikasi Mobile Banking
-                                                atau ATM bank Anda (
-                                                {selectedBank.toUpperCase()}).
-                                            </li>
-                                            <li>
-                                                Pilih menu{" "}
-                                                <strong>
-                                                    Transfer &gt; Virtual
-                                                    Account
-                                                </strong>
-                                                .
-                                            </li>
-                                            <li>
-                                                Masukkan Nomor VA di atas atau
-                                                klik tombol{" "}
-                                                <strong>
-                                                    "Simulasikan Bayar Sukses"
-                                                </strong>{" "}
-                                                di toolbar atas.
-                                            </li>
-                                            <li>
-                                                Sistem akan memvalidasi
-                                                pembayaran dan memicu webhook
-                                                asinkron otomatis.
-                                            </li>
-                                        </ol>
+                                        {activeBank?.instruction_mbanking || activeBank?.instruction_atm ? (
+                                            <div className="space-y-2 text-neutral-400 text-xs">
+                                                {activeBank?.instruction_mbanking && (
+                                                    <div>
+                                                        <strong className="text-neutral-300 font-semibold block mb-0.5">Mobile Banking:</strong>
+                                                        <pre className="font-sans whitespace-pre-wrap text-[11px] leading-relaxed text-neutral-400">{activeBank.instruction_mbanking}</pre>
+                                                    </div>
+                                                )}
+                                                {activeBank?.instruction_atm && (
+                                                    <div className="pt-1.5 border-t border-neutral-800/50">
+                                                        <strong className="text-neutral-300 font-semibold block mb-0.5">ATM:</strong>
+                                                        <pre className="font-sans whitespace-pre-wrap text-[11px] leading-relaxed text-neutral-400">{activeBank.instruction_atm}</pre>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <ol className="list-decimal list-inside space-y-1 text-neutral-400">
+                                                <li>
+                                                    Buka aplikasi Mobile Banking atau ATM bank Anda ({selectedBank.toUpperCase()}).
+                                                </li>
+                                                <li>
+                                                    Pilih menu <strong>Transfer &gt; Virtual Account</strong>.
+                                                </li>
+                                                <li>
+                                                    Masukkan Nomor VA di atas atau klik tombol <strong>"Simulasikan Bayar Sukses"</strong> di toolbar atas.
+                                                </li>
+                                                <li>
+                                                    Sistem akan memvalidasi pembayaran dan memicu webhook asinkron otomatis.
+                                                </li>
+                                            </ol>
+                                        )}
                                     </div>
                                 </div>
                             )}

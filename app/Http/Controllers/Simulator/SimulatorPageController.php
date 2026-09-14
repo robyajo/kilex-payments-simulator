@@ -44,15 +44,54 @@ class SimulatorPageController extends Controller
 
         $merchant = $transaction->merchant;
 
-        // Ensure Virtual Account options are pre-calculated for the UI
-        $bankOptions = [
-            'bca' => $vaGenerator->generateForBank('bca', $transaction->order_id),
-            'bni' => $vaGenerator->generateForBank('bni', $transaction->order_id),
-            'bri' => $vaGenerator->generateForBank('bri', $transaction->order_id),
-            'permata' => $vaGenerator->generateForBank('permata', $transaction->order_id),
-            'mandiri' => $vaGenerator->generateForBank('mandiri', $transaction->order_id),
-            'cimb' => $vaGenerator->generateForBank('cimb', $transaction->order_id),
-        ];
+        // Fetch active banks from database
+        $activeBanks = \App\Models\Bank::where('is_active', true)->orderBy('name', 'asc')->get();
+
+        $bankOptions = [];
+        $bankList = [];
+
+        if ($activeBanks->isNotEmpty()) {
+            foreach ($activeBanks as $b) {
+                $generated = $vaGenerator->generateForBank($b->code, $transaction->order_id);
+                $bankOptions[$b->code] = $generated;
+                $bankList[] = [
+                    'id' => $b->id,
+                    'code' => $b->code,
+                    'name' => $b->name,
+                    'va_prefix' => $b->va_prefix,
+                    'biller_code' => $b->biller_code,
+                    'bill_key_prefix' => $b->bill_key_prefix,
+                    'logo_url' => $b->logo_url,
+                    'badge_color' => $b->badge_color ?? 'blue',
+                    'va_number' => $generated['va_number'] ?? null,
+                    'bill_key' => $generated['bill_key'] ?? null,
+                    'instruction_atm' => $b->instruction_atm,
+                    'instruction_mbanking' => $b->instruction_mbanking,
+                    'instruction_ibanking' => $b->instruction_ibanking,
+                ];
+            }
+        } else {
+            // Fallback default banks if none seeded
+            foreach (['bca', 'bni', 'bri', 'permata', 'mandiri', 'cimb'] as $code) {
+                $generated = $vaGenerator->generateForBank($code, $transaction->order_id);
+                $bankOptions[$code] = $generated;
+                $bankList[] = [
+                    'id' => $code,
+                    'code' => $code,
+                    'name' => strtoupper($code).' Virtual Account',
+                    'va_prefix' => '70014',
+                    'biller_code' => $code === 'mandiri' ? '70012' : null,
+                    'bill_key_prefix' => $code === 'mandiri' ? '99' : null,
+                    'logo_url' => null,
+                    'badge_color' => 'blue',
+                    'va_number' => $generated['va_number'] ?? null,
+                    'bill_key' => $generated['bill_key'] ?? null,
+                    'instruction_atm' => null,
+                    'instruction_mbanking' => null,
+                    'instruction_ibanking' => null,
+                ];
+            }
+        }
 
         $qrString = $transaction->qr_string ?: $vaGenerator->generateQrisPayload($merchant?->name ?? 'Merchant', $transaction->order_id, (float) $transaction->gross_amount);
         $cstoreCode = $transaction->payment_code ?: $vaGenerator->generateCStoreCode('indomaret');
@@ -89,6 +128,7 @@ class SimulatorPageController extends Controller
                 'notification_url' => $merchant?->notification_url,
             ],
             'bankOptions' => $bankOptions,
+            'bankList' => $bankList,
         ]);
     }
 

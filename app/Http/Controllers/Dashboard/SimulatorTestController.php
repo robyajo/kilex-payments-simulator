@@ -24,6 +24,8 @@ class SimulatorTestController extends Controller
         $merchant = $user->getOrCreateDefaultMerchant();
         $apiKey = $merchant->getOrCreateApiKey();
 
+        $activeBanks = \App\Models\Bank::where('is_active', true)->orderBy('name', 'asc')->get();
+
         return Inertia::render('simulator/create', [
             'merchant' => [
                 'name' => $merchant->name,
@@ -33,6 +35,13 @@ class SimulatorTestController extends Controller
                 'server_key' => $apiKey->server_key,
                 'client_key' => $apiKey->client_key,
             ],
+            'banks' => $activeBanks->map(fn ($b) => [
+                'code' => $b->code,
+                'name' => $b->name,
+                'va_prefix' => $b->va_prefix,
+                'logo_url' => $b->logo_url,
+                'badge_color' => $b->badge_color ?? 'blue',
+            ]),
             'defaultOrderId' => 'ORD-'.time().'-'.random_int(100, 999),
         ]);
     }
@@ -50,7 +59,7 @@ class SimulatorTestController extends Controller
             'order_id' => 'required|string|max:100',
             'gross_amount' => 'required|numeric|min:1000',
             'payment_type' => 'required|string|in:snap,bank_transfer,qris,gopay,cstore',
-            'bank' => 'nullable|string|in:bca,bni,bri,permata,mandiri,cimb',
+            'bank' => 'nullable|string|max:50',
             'customer_name' => 'nullable|string|max:150',
             'customer_email' => 'nullable|email|max:150',
             'customer_phone' => 'nullable|string|max:30',

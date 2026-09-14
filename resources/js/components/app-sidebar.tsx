@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { ArrowLeftRight, BookOpen, KeyRound, LayoutGrid, PlayCircle, ShieldCheck } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, Building2, KeyRound, LayoutGrid, PlayCircle, ShieldCheck } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -30,6 +30,11 @@ const mainNavItems: NavItem[] = [
         title: 'Sandbox Tester',
         href: '/dashboard/simulator-test',
         icon: PlayCircle,
+    },
+    {
+        title: 'Bank Channels (CRUD)',
+        href: '/dashboard/admin/banks',
+        icon: Building2,
     },
     {
         title: 'API Keys & Webhooks',

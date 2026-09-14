@@ -16,6 +16,14 @@ import {
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 
+interface BankOption {
+    code: string;
+    name: string;
+    va_prefix: string;
+    logo_url?: string;
+    badge_color?: string;
+}
+
 interface Props {
     merchant: {
         name: string;
@@ -26,13 +34,23 @@ interface Props {
         client_key: string;
     };
     defaultOrderId: string;
+    banks?: BankOption[];
 }
 
-export default function SimulatorCreate({ merchant, apiKey, defaultOrderId }: Props) {
+export default function SimulatorCreate({ merchant, apiKey, defaultOrderId, banks = [] }: Props) {
+    const defaultBankList: BankOption[] = banks.length > 0 ? banks : [
+        { code: 'bca', name: 'BCA', va_prefix: '70014' },
+        { code: 'bni', name: 'BNI', va_prefix: '8808' },
+        { code: 'bri', name: 'BRI', va_prefix: '0201' },
+        { code: 'mandiri', name: 'Mandiri', va_prefix: '70012' },
+        { code: 'permata', name: 'Permata', va_prefix: '8778' },
+        { code: 'cimb', name: 'CIMB', va_prefix: '5919' },
+    ];
+
     const [orderId, setOrderId] = useState(defaultOrderId);
     const [amount, setAmount] = useState('150000');
     const [paymentType, setPaymentType] = useState<'snap' | 'bank_transfer' | 'qris' | 'gopay' | 'cstore'>('snap');
-    const [bank, setBank] = useState('bca');
+    const [bank, setBank] = useState(defaultBankList[0]?.code || 'bca');
     const [customerName, setCustomerName] = useState('Budi Santoso');
     const [customerEmail, setCustomerEmail] = useState('budi@example.com');
     const [customerPhone, setCustomerPhone] = useState('081234567890');
@@ -180,20 +198,39 @@ export default function SimulatorCreate({ merchant, apiKey, defaultOrderId }: Pr
                         {/* Bank selector if bank_transfer or snap */}
                         {(paymentType === 'bank_transfer' || paymentType === 'snap') && (
                             <div className="space-y-2 text-xs">
-                                <label className="font-semibold text-neutral-700 dark:text-neutral-300">Pilihan Bank</label>
-                                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                                    {['bca', 'bni', 'bri', 'mandiri', 'permata', 'cimb'].map((b) => (
+                                <label className="font-semibold text-neutral-700 dark:text-neutral-300">
+                                    Pilihan Bank ({defaultBankList.length} Bank Terdaftar)
+                                </label>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    {defaultBankList.map((b) => (
                                         <button
-                                            key={b}
+                                            key={b.code}
                                             type="button"
-                                            onClick={() => setBank(b)}
-                                            className={`py-2 px-2 rounded-lg border text-center text-xs uppercase font-bold transition-all cursor-pointer ${
-                                                bank === b
+                                            onClick={() => setBank(b.code)}
+                                            className={`p-2.5 rounded-xl border text-left flex items-center justify-between gap-1.5 transition-all cursor-pointer ${
+                                                bank === b.code
                                                     ? 'border-blue-500 bg-blue-600 text-white shadow-sm'
                                                     : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                                             }`}
                                         >
-                                            {b}
+                                            <div className="flex items-center gap-2 truncate">
+                                                {b.logo_url ? (
+                                                    <img
+                                                        src={b.logo_url}
+                                                        alt={b.name}
+                                                        className="size-4 object-contain rounded bg-white p-0.5 shrink-0"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLElement).style.display = 'none';
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <CreditCard className="size-3.5 shrink-0" />
+                                                )}
+                                                <span className="text-xs font-semibold truncate">{b.name}</span>
+                                            </div>
+                                            <span className="text-[10px] font-mono font-bold uppercase opacity-80 shrink-0">
+                                                {b.code}
+                                            </span>
                                         </button>
                                     ))}
                                 </div>

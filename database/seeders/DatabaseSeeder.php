@@ -18,8 +18,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Call User Seeder (Seeds 1 Admin and 1 User)
-        $this->call(UserSeeder::class);
+        // 1. Call User Seeder (Seeds 1 Admin and 1 User) & Bank Seeder
+        $this->call([
+            UserSeeder::class,
+            BankSeeder::class,
+        ]);
 
         // 2. Seed Sample Demo Transactions
         $adminMerchant = Merchant::where('merchant_code', 'G141599999')->first();

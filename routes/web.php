@@ -35,6 +35,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Simulator Sandbox Quick Creator
     Route::get('/dashboard/simulator-test', [SimulatorTestController::class, 'index'])->name('simulator.test.index');
     Route::post('/dashboard/simulator-test/create', [SimulatorTestController::class, 'store'])->name('simulator.test.create');
+
+    // Administrator Virtual Account Bank Management
+    Route::middleware(['admin'])->prefix('dashboard/admin')->name('admin.')->group(function () {
+        Route::get('/banks', [\App\Http\Controllers\Admin\BankController::class, 'index'])->name('banks.index');
+        Route::post('/banks', [\App\Http\Controllers\Admin\BankController::class, 'store'])->name('banks.store');
+        Route::put('/banks/{bank}', [\App\Http\Controllers\Admin\BankController::class, 'update'])->name('banks.update');
+        Route::post('/banks/{bank}/toggle', [\App\Http\Controllers\Admin\BankController::class, 'toggleActive'])->name('banks.toggle');
+        Route::delete('/banks/{bank}', [\App\Http\Controllers\Admin\BankController::class, 'destroy'])->name('banks.destroy');
+    });
 });
 
 require __DIR__.'/settings.php';
