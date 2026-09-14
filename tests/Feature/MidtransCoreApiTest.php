@@ -1,0 +1,97 @@
+<?php
+
+use App\Models\ApiKey;
+use App\Models\Merchant;
+use App\Models\User;
+
+test('merchant can create core api charge for bca virtual account', function () {
+    $user = User::factory()->create();
+    $merchant = Merchant::create([
+        'user_id' => $user->id,
+        'name' => 'Acme Merchant',
+        'merchant_code' => 'G12345678',
+    ]);
+    $apiKey = ApiKey::create([
+        'merchant_id' => $merchant->id,
+        'server_key' => 'SB-Mid-server-coretest123',
+        'client_key' => 'SB-Mid-client-coretest123',
+    ]);
+
+    $authHeader = 'Basic '.base64_encode($apiKey->server_key.':');
+
+    $response = $this->withHeaders([
+        'Authorization' => $authHeader,
+    ])->postJson('/api/v2/charge', [
+        'payment_type' => 'bank_transfer',
+        'bank_transfer' => [
+            'bank' => 'bca',
+        ],
+        'transaction_details' => [
+            'order_id' => 'ORDER-CORE-001',
+            'gross_amount' => 175000,
+        ],
+    ]);
+
+    $response->assertStatus(201)
+        ->assertJson([
+            'status_code' => '201',
+            'order_id' => 'ORDER-CORE-001',
+            'transaction_status' => 'pending',
+            'payment_type' => 'bank_transfer',
+        ])
+        ->assertJsonStructure([
+            'transaction_id',
+            'order_id',
+            'gross_amount',
+            'va_numbers' => [
+                ['bank', 'va_number'],
+            ],
+            'signature_key',
+        ]);
+});
+
+test('merchant can check status, cancel, and expire transaction via core api', function () {
+    $user = User::factory()->create();
+    $merchant = Merchant::create([
+        'user_id' => $user->id,
+        'name' => 'Acme Merchant',
+        'merchant_code' => 'G12345678',
+    ]);
+    $apiKey = ApiKey::create([
+        'merchant_id' => $merchant->id,
+        'server_key' => 'SB-Mid-server-coretest456',
+        'client_key' => 'SB-Mid-client-coretest456',
+    ]);
+
+    $authHeader = 'Basic '.base64_encode($apiKey->server_key.':');
+
+    // Create charge
+    $this->withHeaders(['Authorization' => $authHeader])
+        ->postJson('/api/v2/charge', [
+            'payment_type' => 'bank_transfer',
+            'transaction_details' => [
+                'order_id' => 'ORDER-CORE-002',
+                'gross_amount' => 50000,
+            ],
+        ])->assertStatus(201);
+
+    // Check status
+    $statusRes = $this->withHeaders(['Authorization' => $authHeader])
+        ->getJson('/api/v2/ORDER-CORE-002/status');
+
+    $statusRes->assertStatus(201)
+        ->assertJson([
+            'order_id' => 'ORDER-CORE-002',
+            'transaction_status' => 'pending',
+        ]);
+
+    // Cancel transaction
+    $cancelRes = $this->withHeaders(['Authorization' => $authHeader])
+        ->postJson('/api/v2/ORDER-CORE-002/cancel');
+
+    $cancelRes->assertStatus(200)
+        ->assertJson([
+            'status_code' => '202',
+            'transaction_status' => 'cancel',
+        ]);
+});
