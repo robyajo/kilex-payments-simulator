@@ -8,6 +8,8 @@ use App\Http\Controllers\Simulator\SimulatorPageController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
+Route::inertia('/about', 'public/about')->name('public.about');
+Route::inertia('/docs', 'public/docs')->name('public.docs');
 
 // Public Midtrans Snap Mock Payment UI & Public Simulation Trigger
 Route::get('/snap/v1/pay/{token}', [SimulatorPageController::class, 'renderSnapPayment'])->name('snap.pay');

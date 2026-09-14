@@ -13,13 +13,19 @@ void createInertiaApp({
     layout: (name) => {
         switch (true) {
             case name === 'welcome':
+            case name.startsWith('public/'):
+            case name.startsWith('snap/'):
+            case name === 'dashboard':
+            case name.startsWith('transactions/'):
+            case name.startsWith('simulator/'):
+            case name === 'settings/api-keys':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
             default:
-                return AppLayout;
+                return null;
         }
     },
     strictMode: true,
