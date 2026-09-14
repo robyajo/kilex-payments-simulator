@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\ApiKey;
 use App\Models\Merchant;
 use App\Models\Transaction;
-use App\Models\User;
 use App\Models\WebhookLog;
 use App\Services\MidtransSignatureService;
 use App\Services\VirtualAccountGenerator;
@@ -19,44 +18,26 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::firstOrCreate(
-            ['email' => 'admin@kilexpay.test'],
-            [
-                'name' => 'Kilex Developer',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-            ]
-        );
+        // 1. Call User Seeder (Seeds 1 Admin and 1 User)
+        $this->call(UserSeeder::class);
 
-        $merchant = Merchant::firstOrCreate(
-            ['user_id' => $user->id],
-            [
-                'name' => 'Kilex Store Official',
-                'merchant_code' => 'G141599999',
-                'notification_url' => 'https://webhook.site/demo-notification',
-                'finish_url' => 'https://example.com/payment/finish',
-                'unfinish_url' => 'https://example.com/payment/unfinish',
-                'error_url' => 'https://example.com/payment/error',
-            ]
-        );
+        // 2. Seed Sample Demo Transactions
+        $adminMerchant = Merchant::where('merchant_code', 'G141599999')->first();
+        $adminApiKey = ApiKey::where('merchant_id', $adminMerchant?->id)->first();
+        $userMerchant = Merchant::where('merchant_code', 'G283910293')->first();
 
-        $apiKey = ApiKey::firstOrCreate(
-            ['merchant_id' => $merchant->id],
-            [
-                'server_key' => 'SB-Mid-server-kilex9876543210demo',
-                'client_key' => 'SB-Mid-client-kilex1234567890demo',
-                'is_production' => false,
-            ]
-        );
+        if (! $adminMerchant || ! $adminApiKey || ! $userMerchant) {
+            return;
+        }
 
         $vaGenerator = new VirtualAccountGenerator;
         $signatureService = new MidtransSignatureService;
 
-        // Seed 1: Settlement BCA VA
+        // Seed 1: Settlement BCA VA (Admin Merchant)
         $order1 = 'ORD-202609-1001';
         $bcaVa = $vaGenerator->generateForBank('bca', $order1);
         $t1 = Transaction::firstOrCreate(
-            ['order_id' => $order1, 'merchant_id' => $merchant->id],
+            ['order_id' => $order1, 'merchant_id' => $adminMerchant->id],
             [
                 'gross_amount' => 250000.00,
                 'payment_type' => 'bank_transfer',
@@ -81,12 +62,12 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $sig1 = $signatureService->generate($order1, '200', '250000.00', $apiKey->server_key);
+        $sig1 = $signatureService->generate($order1, '200', '250000.00', $adminApiKey->server_key);
         WebhookLog::firstOrCreate(
             ['transaction_id' => $t1->id],
             [
-                'merchant_id' => $merchant->id,
-                'target_url' => $merchant->notification_url,
+                'merchant_id' => $adminMerchant->id,
+                'target_url' => $adminMerchant->notification_url,
                 'http_status' => 200,
                 'signature_key' => $sig1,
                 'payload_json' => [
@@ -100,11 +81,11 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Seed 2: Pending QRIS
+        // Seed 2: Pending QRIS (Admin Merchant)
         $order2 = 'ORD-202609-1002';
-        $qrString = $vaGenerator->generateQrisPayload($merchant->name, $order2, 75000.00);
+        $qrString = $vaGenerator->generateQrisPayload($adminMerchant->name, $order2, 75000.00);
         Transaction::firstOrCreate(
-            ['order_id' => $order2, 'merchant_id' => $merchant->id],
+            ['order_id' => $order2, 'merchant_id' => $adminMerchant->id],
             [
                 'gross_amount' => 75000.00,
                 'payment_type' => 'qris',
@@ -124,11 +105,11 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Seed 3: Pending Mandiri Bill
+        // Seed 3: Pending Mandiri Bill (User Merchant)
         $order3 = 'ORD-202609-1003';
         $mandiri = $vaGenerator->generateForBank('mandiri', $order3);
         Transaction::firstOrCreate(
-            ['order_id' => $order3, 'merchant_id' => $merchant->id],
+            ['order_id' => $order3, 'merchant_id' => $userMerchant->id],
             [
                 'gross_amount' => 500000.00,
                 'payment_type' => 'echannel',
