@@ -20,7 +20,7 @@ import {
     ExternalLink,
     X,
 } from "lucide-react";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 
 interface BankItem {
     id: string;
@@ -229,7 +229,6 @@ export default function AdminBanksIndex({ banks, filters, stats }: Props) {
             ]}
         >
             <Head title="Manajemen Bank Virtual Account - Admin" />
-            <Toaster position="top-right" richColors />
 
             <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl mx-auto w-full">
                 {/* Page Title & Add Button */}

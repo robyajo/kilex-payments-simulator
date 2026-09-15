@@ -19,7 +19,6 @@ import {
     Sparkles,
 } from "lucide-react";
 import { useAppearance } from "@/hooks/use-appearance";
-import { Toaster } from "sonner";
 
 interface PublicLayoutProps {
     children: React.ReactNode;
@@ -36,7 +35,6 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 
     return (
         <div className="min-h-screen flex flex-col bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors duration-200 selection:bg-blue-500/30 selection:text-blue-500">
-            <Toaster position="top-right" richColors />
 
             {/* Top Navigation Bar */}
             <header className="sticky top-0 z-50 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800/80 transition-colors">

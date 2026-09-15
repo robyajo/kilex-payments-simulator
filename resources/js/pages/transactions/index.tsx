@@ -24,7 +24,7 @@ import {
     History,
     AlertCircle
 } from 'lucide-react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 
 interface WebhookLogItem {
     id: string;
@@ -217,7 +217,6 @@ export default function TransactionsIndex({ transactions, filters, serverKey, me
             ]}
         >
             <Head title="Transactions Inspector - Kilex Payment Simulator" />
-            <Toaster position="top-right" richColors />
 
             <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
 
