@@ -8,10 +8,15 @@ use App\Http\Controllers\Dashboard\TransactionController;
 use App\Http\Controllers\Simulator\SimulatorPageController;
 use App\Http\Controllers\Stripe\StripeCheckoutController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::inertia('/', 'welcome')->name('home');
 Route::inertia('/about', 'public/about')->name('public.about');
-Route::inertia('/docs', 'public/docs')->name('public.docs');
+Route::get('/docs', function () {
+    return Inertia::render('public/docs', [
+        'appUrl' => rtrim((string) config('app.url'), '/'),
+    ]);
+})->name('public.docs');
 
 // Public Midtrans Snap Mock Payment UI & Public Simulation Trigger
 Route::get('/snap/v1/pay/{token}', [SimulatorPageController::class, 'renderSnapPayment'])->name('snap.pay');
