@@ -46,8 +46,42 @@ test('merchant can create core api charge for bca virtual account', function () 
             'va_numbers' => [
                 ['bank', 'va_number'],
             ],
+            'payment_url',
             'signature_key',
         ]);
+});
+
+test('qris charge returns a QR payload and hosted sandbox payment URL', function () {
+    $user = User::factory()->create();
+    $merchant = Merchant::create([
+        'user_id' => $user->id,
+        'name' => 'Acme Merchant',
+        'merchant_code' => 'G12345678',
+    ]);
+    $apiKey = ApiKey::create([
+        'merchant_id' => $merchant->id,
+        'server_key' => 'SB-Mid-server-qris-test',
+        'client_key' => 'SB-Mid-client-qris-test',
+    ]);
+
+    $response = $this->withHeaders([
+        'Authorization' => 'Basic '.base64_encode($apiKey->server_key.':'),
+    ])->postJson('/api/v2/charge', [
+        'payment_type' => 'qris',
+        'transaction_details' => [
+            'order_id' => 'ORDER-QRIS-001',
+            'gross_amount' => 25000,
+        ],
+    ]);
+
+    $response->assertStatus(201)
+        ->assertJsonStructure([
+            'qr_string',
+            'qr_url',
+            'payment_url',
+            'actions',
+        ])
+        ->assertJsonPath('transaction_status', 'pending');
 });
 
 test('merchant can check status, cancel, and expire transaction via core api', function () {

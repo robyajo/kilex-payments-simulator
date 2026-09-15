@@ -182,8 +182,12 @@ class CoreApiController extends Controller
 
         if ($qrString) {
             $responsePayload['qr_string'] = $qrString;
+            $responsePayload['qr_url'] = url("/snap/v1/pay/{$transaction->snap_token}");
             $responsePayload['actions'] = $actions;
         }
+
+        // Sandbox-only helper: open the hosted payment mock to complete the test payment.
+        $responsePayload['payment_url'] = url("/snap/v1/pay/{$transaction->snap_token}");
 
         return response()->json($responsePayload, 201);
     }

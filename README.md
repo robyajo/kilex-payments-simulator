@@ -38,6 +38,14 @@ Use the generated **server key** with HTTP Basic authentication (`server_key:`):
 
 The response shape, status codes, signature key, virtual-account metadata, QRIS payload, and webhook payload follow the documented Midtrans sandbox conventions. The simulator adds the public Snap mock page at `/snap/v1/pay/{token}`.
 
+For Core API sandbox testing, use the response as follows:
+
+- `bank_transfer`: read `va_numbers[0].va_number` and show it in your checkout. Open `payment_url` when the tester needs to complete the simulated payment.
+- `echannel`/Mandiri: read `biller_code` and `bill_key`, then open `payment_url`.
+- `qris`: send `qr_string` to your QR renderer. `qr_url`/`payment_url` opens the simulator page that displays the QR payment and provides the sandbox settlement action.
+
+The simulator does not connect to real bank or QRIS networks. The hosted payment URL is the sandbox payment surface; after the tester chooses **Simulasikan Bayar Sukses**, the transaction becomes `settlement` and the configured webhook is queued.
+
 ## Webhooks
 
 Configure a notification URL under **Settings → API Keys**. Settlement, cancellation, expiration, and denial enqueue a signed notification. Failed or non-2xx deliveries are retried by the queue and recorded in `webhook_logs`.

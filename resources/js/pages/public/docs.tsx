@@ -227,6 +227,12 @@ export default function Docs() {
                                 <code> biller_code</code> dan <code>bill_key</code> melalui <code>echannel</code>.
                                 Nomor tersebut adalah identifier sandbox; penyelesaian pembayaran dilakukan dari Mock Snap Simulator.
                             </div>
+                            <div className="p-3.5 rounded-xl bg-blue-500/5 border border-blue-500/20 text-neutral-600 dark:text-neutral-400">
+                                <strong className="text-blue-600 dark:text-blue-400">Alur pembayaran aplikasi:</strong>{' '}
+                                simpan <code>va_numbers[0].va_number</code> untuk bank atau render <code>qr_string</code> untuk QRIS.
+                                Response juga menyediakan <code>payment_url</code> sebagai halaman pembayaran sandbox.
+                                Buka URL tersebut saat pengujian, lalu pilih metode yang sesuai dan klik tombol simulasi pembayaran.
+                            </div>
 
                             <div className="space-y-2">
                                 <div className="text-xs text-neutral-400">Contoh Request BCA Virtual Account:</div>
