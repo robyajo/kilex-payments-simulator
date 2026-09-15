@@ -200,6 +200,80 @@ export default function Docs() {
 }`}
                                 </pre>
                             </div>
+
+                            <div className="space-y-4 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                                <div>
+                                    <div className="font-bold text-blue-600 dark:text-blue-400">Alur integrasi aplikasi merchant</div>
+                                    <p className="text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">
+                                        Aplikasi merchant membuat transaksi melalui API, menampilkan identifier pembayaran kepada user,
+                                        lalu membuka <code>payment_url</code> ketika tester perlu menyelesaikan pembayaran di sandbox.
+                                    </p>
+                                </div>
+                                <ol className="list-decimal list-inside space-y-1.5 text-neutral-600 dark:text-neutral-400">
+                                    <li>Kirim request charge dengan server key melalui backend merchant.</li>
+                                    <li>Untuk bank, tampilkan <code>va_numbers[0].va_number</code>. Untuk Mandiri, tampilkan <code>biller_code</code> dan <code>bill_key</code>.</li>
+                                    <li>Untuk QRIS, ubah <code>qr_string</code> menjadi gambar QR menggunakan library QR di aplikasi merchant.</li>
+                                    <li>Sediakan tombol pembayaran yang membuka <code>payment_url</code> dari response.</li>
+                                    <li>Di halaman sandbox, pilih metode pembayaran lalu klik <strong>Simulasikan Bayar Sukses</strong>.</li>
+                                    <li>Terima webhook settlement atau polling endpoint status untuk mengonfirmasi pembayaran.</li>
+                                </ol>
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="text-xs text-neutral-400">Contoh Request QRIS:</div>
+                                <pre className="p-4 rounded-xl bg-neutral-950 text-neutral-200 font-mono text-xs overflow-x-auto border border-neutral-800">
+{`curl -X POST http://localhost:8001/api/v2/charge \\
+  -u "SB-Mid-server-xxxx:" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "payment_type": "qris",
+    "transaction_details": {
+      "order_id": "ORDER-QRIS-001",
+      "gross_amount": 150000
+    }
+  }'`}
+                                </pre>
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="text-xs text-neutral-400">Response QRIS:</div>
+                                <pre className="p-4 rounded-xl bg-neutral-950 text-emerald-400 font-mono text-xs overflow-x-auto border border-neutral-800">
+{`{
+  "status_code": "201",
+  "transaction_id": "uuid-transaksi",
+  "payment_type": "qris",
+  "transaction_status": "pending",
+  "qr_string": "000201010212...",
+  "qr_url": "http://localhost:8001/snap/v1/pay/snap-token-xxxx",
+  "payment_url": "http://localhost:8001/snap/v1/pay/snap-token-xxxx"
+}`}
+                                </pre>
+                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                                    Render <code>qr_string</code> di checkout merchant. Gunakan <code>qr_url</code> atau <code>payment_url</code>
+                                    untuk membuka halaman pembayaran sandbox dan melakukan simulasi settlement.
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="text-xs text-neutral-400">Response Mandiri E-Channel:</div>
+                                <pre className="p-4 rounded-xl bg-neutral-950 text-emerald-400 font-mono text-xs overflow-x-auto border border-neutral-800">
+{`{
+  "status_code": "201",
+  "payment_type": "echannel",
+  "transaction_status": "pending",
+  "biller_code": "70012",
+  "bill_key": "9912345678",
+  "payment_url": "http://localhost:8001/snap/v1/pay/snap-token-xxxx"
+}`}
+                                </pre>
+                            </div>
+
+                            <div className="p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-neutral-600 dark:text-neutral-400">
+                                <strong className="text-amber-600 dark:text-amber-400">Penting untuk pengujian:</strong>{' '}
+                                VA dan QRIS yang dihasilkan adalah identifier sandbox dan tidak terhubung ke jaringan bank atau QRIS nyata.
+                                Pembayaran uji dilakukan melalui <code>payment_url</code>. Setelah settlement, simulator mengirim webhook
+                                ke <code>notification_url</code> merchant.
+                            </div>
                         </section>
 
                         {/* 4. Core API */}
