@@ -114,6 +114,7 @@ class TransactionController extends Controller
     public function markPaid(Transaction $transaction, Request $request): RedirectResponse|JsonResponse
     {
         $this->authorizeMerchant($request, $transaction);
+        abort_unless($transaction->canTransitionTo('settlement'), 412, 'Transaction cannot be settled from its current state.');
 
         $transaction->update([
             'transaction_status' => 'settlement',
@@ -137,6 +138,7 @@ class TransactionController extends Controller
     public function markExpire(Transaction $transaction, Request $request): RedirectResponse|JsonResponse
     {
         $this->authorizeMerchant($request, $transaction);
+        abort_unless($transaction->canTransitionTo('expire'), 412, 'Transaction cannot be expired from its current state.');
 
         $transaction->update([
             'transaction_status' => 'expire',
@@ -159,6 +161,7 @@ class TransactionController extends Controller
     public function markCancel(Transaction $transaction, Request $request): RedirectResponse|JsonResponse
     {
         $this->authorizeMerchant($request, $transaction);
+        abort_unless($transaction->canTransitionTo('cancel'), 412, 'Transaction cannot be canceled from its current state.');
 
         $transaction->update([
             'transaction_status' => 'cancel',

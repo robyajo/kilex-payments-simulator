@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class SendMidtransNotificationJob implements ShouldQueue
 {
@@ -23,6 +24,8 @@ class SendMidtransNotificationJob implements ShouldQueue
      * The number of seconds to wait before retrying the job.
      */
     public int $backoff = 5;
+
+    public int $timeout = 20;
 
     /**
      * Create a new job instance.
@@ -125,7 +128,8 @@ class SendMidtransNotificationJob implements ShouldQueue
         $responseBody = null;
 
         try {
-            $response = Http::timeout(10)
+            $response = Http::connectTimeout(3)
+                ->timeout(10)
                 ->withHeaders([
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json',
@@ -135,9 +139,17 @@ class SendMidtransNotificationJob implements ShouldQueue
 
             $httpStatus = $response->status();
             $responseBody = substr($response->body(), 0, 5000);
-        } catch (\Throwable $e) {
+            if ($response->failed()) {
+                $response->throw();
+            }
+        } catch (Throwable $e) {
             $responseBody = 'Webhook delivery error: '.$e->getMessage();
-            Log::error("SendMidtransNotificationJob Exception for {$targetUrl}: ".$e->getMessage());
+            Log::warning('Midtrans webhook delivery failed', [
+                'transaction_id' => $transaction->id,
+                'target_url' => $targetUrl,
+                'attempt' => $this->attempts(),
+                'exception' => $e,
+            ]);
         }
 
         // Record audit webhook log
@@ -150,6 +162,18 @@ class SendMidtransNotificationJob implements ShouldQueue
             'signature_key' => $signatureKey,
             'response_body' => $responseBody,
             'attempt' => $this->attempts(),
+        ]);
+
+        if ($httpStatus === null || $httpStatus < 200 || $httpStatus >= 300) {
+            throw new \RuntimeException("Webhook delivery failed with status {$httpStatus}.");
+        }
+    }
+
+    public function failed(?Throwable $exception): void
+    {
+        Log::error('Midtrans webhook delivery exhausted retries', [
+            'transaction_id' => $this->transactionId,
+            'exception' => $exception,
         ]);
     }
 }

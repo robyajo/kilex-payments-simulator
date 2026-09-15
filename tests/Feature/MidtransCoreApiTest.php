@@ -79,7 +79,7 @@ test('merchant can check status, cancel, and expire transaction via core api', f
     $statusRes = $this->withHeaders(['Authorization' => $authHeader])
         ->getJson('/api/v2/ORDER-CORE-002/status');
 
-    $statusRes->assertStatus(201)
+    $statusRes->assertStatus(200)
         ->assertJson([
             'order_id' => 'ORDER-CORE-002',
             'transaction_status' => 'pending',
@@ -94,4 +94,57 @@ test('merchant can check status, cancel, and expire transaction via core api', f
             'status_code' => '202',
             'transaction_status' => 'cancel',
         ]);
+});
+
+test('client keys cannot authorize server API endpoints', function () {
+    $user = User::factory()->create();
+    $merchant = Merchant::create([
+        'user_id' => $user->id,
+        'name' => 'Acme Merchant',
+        'merchant_code' => 'G12345678',
+    ]);
+    $apiKey = ApiKey::create([
+        'merchant_id' => $merchant->id,
+        'server_key' => 'SB-Mid-server-auth-test',
+        'client_key' => 'SB-Mid-client-auth-test',
+    ]);
+
+    $this->withHeaders([
+        'Authorization' => 'Basic '.base64_encode($apiKey->client_key.':'),
+    ])->postJson('/api/v2/charge', [
+        'payment_type' => 'bank_transfer',
+        'transaction_details' => [
+            'order_id' => 'ORDER-CLIENT-KEY',
+            'gross_amount' => 10000,
+        ],
+    ])->assertStatus(401);
+});
+
+test('duplicate pending order ids are rejected for a merchant', function () {
+    $user = User::factory()->create();
+    $merchant = Merchant::create([
+        'user_id' => $user->id,
+        'name' => 'Acme Merchant',
+        'merchant_code' => 'G12345678',
+    ]);
+    $apiKey = ApiKey::create([
+        'merchant_id' => $merchant->id,
+        'server_key' => 'SB-Mid-server-duplicate-test',
+        'client_key' => 'SB-Mid-client-duplicate-test',
+    ]);
+
+    $payload = [
+        'payment_type' => 'bank_transfer',
+        'transaction_details' => [
+            'order_id' => 'ORDER-DUPLICATE',
+            'gross_amount' => 10000,
+        ],
+    ];
+
+    $request = $this->withHeaders([
+        'Authorization' => 'Basic '.base64_encode($apiKey->server_key.':'),
+    ]);
+
+    $request->postJson('/api/v2/charge', $payload)->assertStatus(201);
+    $request->postJson('/api/v2/charge', $payload)->assertStatus(406);
 });

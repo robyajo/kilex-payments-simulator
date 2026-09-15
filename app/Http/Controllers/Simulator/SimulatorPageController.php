@@ -130,6 +130,7 @@ class SimulatorPageController extends Controller
             ],
             'bankOptions' => $bankOptions,
             'bankList' => $bankList,
+            'actionToken' => $transaction->snap_token,
         ]);
     }
 
@@ -141,6 +142,7 @@ class SimulatorPageController extends Controller
     {
         $validated = $request->validate([
             'transaction_id' => 'required|string',
+            'action_token' => 'required|string',
             'bank' => 'nullable|string',
             'va_number' => 'nullable|string',
             'bill_key' => 'nullable|string',
@@ -148,9 +150,11 @@ class SimulatorPageController extends Controller
             'payment_type' => 'nullable|string',
         ]);
 
-        $transaction = Transaction::where('id', $validated['transaction_id'])
-            ->orWhere('snap_token', $validated['transaction_id'])
-            ->orWhere('order_id', $validated['transaction_id'])
+        $transaction = Transaction::where('snap_token', $validated['action_token'])
+            ->where(function ($query) use ($validated) {
+                $query->where('id', $validated['transaction_id'])
+                    ->orWhere('snap_token', $validated['transaction_id']);
+            })
             ->firstOrFail();
 
         $updateData = [];
@@ -200,6 +204,14 @@ class SimulatorPageController extends Controller
 
             default:
                 return response()->json(['error' => 'Unknown action'], 400);
+        }
+
+        $targetStatus = $updateData['transaction_status'];
+        if (! $transaction->canTransitionTo($targetStatus)) {
+            return response()->json([
+                'status_code' => '412',
+                'status_message' => 'Transaction status cannot be changed from its current state.',
+            ], 412);
         }
 
         $transaction->update($updateData);

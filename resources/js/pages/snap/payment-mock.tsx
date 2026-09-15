@@ -45,6 +45,7 @@ interface BankItemData {
 }
 
 interface Props {
+    actionToken: string;
     transaction: {
         id: string;
         order_id: string;
@@ -90,6 +91,7 @@ interface Props {
 }
 
 export default function PaymentMock({
+    actionToken,
     transaction,
     merchant,
     bankOptions,
@@ -209,6 +211,7 @@ export default function PaymentMock({
                 },
                 body: JSON.stringify({
                     transaction_id: transaction.id,
+                    action_token: actionToken,
                     bank: selectedBank,
                     va_number: currentBankInfo?.va_number,
                     bill_key: currentBankInfo?.bill_key,

@@ -33,11 +33,26 @@ class SnapController extends Controller
             'custom_field2' => 'nullable|string',
             'custom_field3' => 'nullable|string',
             'expiry' => 'nullable|array',
+            'expiry.duration' => 'nullable|integer|min:1|max:720',
+            'expiry.unit' => 'nullable|in:minute,minutes,hour,hours,day,days',
             'enabled_payments' => 'nullable|array',
         ]);
 
         $orderId = $request->input('transaction_details.order_id') ?? $request->input('order_id');
         $grossAmount = (float) ($request->input('transaction_details.gross_amount') ?? $request->input('gross_amount'));
+
+        $existingTransaction = Transaction::where('merchant_id', $merchant->id)
+            ->where('order_id', $orderId)
+            ->whereIn('transaction_status', ['pending', 'settlement'])
+            ->latest()
+            ->first();
+
+        if ($existingTransaction) {
+            return response()->json([
+                'status_code' => '406',
+                'status_message' => 'There is another transaction with the same order_id.',
+            ], 406);
+        }
 
         // Determine expiry duration (default: 24 hours)
         $expiryDuration = 24;

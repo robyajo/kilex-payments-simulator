@@ -22,6 +22,7 @@ Route::middleware([MidtransAuthMiddleware::class])->group(function () {
     // Midtrans Core API
     Route::post('/v2/charge', [CoreApiController::class, 'charge'])->name('api.midtrans.core.charge');
     Route::get('/v2/{order_id}/status', [CoreApiController::class, 'getStatus'])->name('api.midtrans.core.status');
+    Route::get('/v1/qr-code/{order_id}', [CoreApiController::class, 'getQrCode'])->name('api.midtrans.qr-code');
     Route::post('/v2/{order_id}/cancel', [CoreApiController::class, 'cancel'])->name('api.midtrans.core.cancel');
     Route::post('/v2/{order_id}/expire', [CoreApiController::class, 'expire'])->name('api.midtrans.core.expire');
 

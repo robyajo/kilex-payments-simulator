@@ -10,6 +10,7 @@ use App\Services\MidtransSignatureService;
 use App\Services\VirtualAccountGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class CoreApiController extends Controller
 {
@@ -25,7 +26,21 @@ class CoreApiController extends Controller
         /** @var Merchant $merchant */
         $merchant = $request->attributes->get('merchant');
 
-        $paymentType = $request->input('payment_type', 'bank_transfer');
+        $validated = $request->validate([
+            'payment_type' => ['required', 'in:bank_transfer,echannel,qris,gopay,shopeepay,cstore'],
+            'transaction_details' => ['required', 'array'],
+            'transaction_details.order_id' => ['required', 'string', 'max:100'],
+            'transaction_details.gross_amount' => ['required', 'numeric', 'gt:0'],
+            'bank_transfer.bank' => ['nullable', 'in:bca,bni,bri,permata,cimb'],
+            'echannel' => ['nullable', 'array'],
+            'qris' => ['nullable', 'array'],
+            'gopay' => ['nullable', 'array'],
+            'cstore.store' => ['nullable', 'in:indomaret,alfamart'],
+            'customer_details' => ['nullable', 'array'],
+            'item_details' => ['nullable', 'array'],
+        ]);
+
+        $paymentType = $validated['payment_type'];
         $orderId = $request->input('transaction_details.order_id') ?? $request->input('order_id');
         $grossAmount = (float) ($request->input('transaction_details.gross_amount') ?? $request->input('gross_amount', 0));
 
@@ -34,6 +49,21 @@ class CoreApiController extends Controller
                 'status_code' => '400',
                 'status_message' => 'Validation error: transaction_details.order_id and gross_amount are required.',
             ], 400);
+        }
+
+        $existingTransaction = Transaction::where('merchant_id', $merchant->id)
+            ->where('order_id', $orderId)
+            ->whereIn('transaction_status', ['pending', 'settlement'])
+            ->latest()
+            ->first();
+
+        if ($existingTransaction) {
+            return response()->json([
+                'status_code' => '406',
+                'status_message' => 'There is another transaction with the same order_id.',
+                'transaction_id' => $existingTransaction->id,
+                'order_id' => $existingTransaction->order_id,
+            ], 406);
         }
 
         $bank = null;
@@ -46,7 +76,7 @@ class CoreApiController extends Controller
 
         // Handle Payment Methods
         if ($paymentType === 'bank_transfer') {
-            $bank = strtolower((string) ($request->input('bank_transfer.bank') ?? $request->input('bank', 'bca')));
+            $bank = strtolower((string) ($request->input('bank_transfer.bank') ?? 'bca'));
             if ($bank === 'mandiri' || $bank === 'echannel') {
                 $bank = 'mandiri';
                 $vaData = $vaGenerator->generateForBank('mandiri', $orderId);
@@ -102,6 +132,7 @@ class CoreApiController extends Controller
             'custom_field3' => $request->input('custom_field3'),
             'customer_details' => $request->input('customer_details'),
             'item_details' => $request->input('item_details'),
+            'snap_token' => 'snap-token-'.Str::uuid()->toString(),
             'expired_at' => $expiredAt,
         ]);
 
@@ -237,7 +268,30 @@ class CoreApiController extends Controller
             $responsePayload['qr_string'] = $transaction->qr_string;
         }
 
-        return response()->json($responsePayload, (int) $transaction->status_code);
+        return response()->json($responsePayload, 200);
+    }
+
+    public function getQrCode(string $orderId, Request $request): JsonResponse
+    {
+        /** @var Merchant $merchant */
+        $merchant = $request->attributes->get('merchant');
+        $transaction = Transaction::where('merchant_id', $merchant->id)
+            ->where('order_id', $orderId)
+            ->latest()
+            ->first();
+
+        if (! $transaction || ! $transaction->qr_string) {
+            return response()->json([
+                'status_code' => '404',
+                'status_message' => 'QRIS transaction not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'order_id' => $transaction->order_id,
+            'qr_string' => $transaction->qr_string,
+            'transaction_status' => $transaction->transaction_status,
+        ]);
     }
 
     /**
@@ -265,6 +319,13 @@ class CoreApiController extends Controller
                 'status_code' => '404',
                 'status_message' => 'Transaction order_id not found',
             ], 404);
+        }
+
+        if (! $transaction->canTransitionTo('cancel')) {
+            return response()->json([
+                'status_code' => '412',
+                'status_message' => 'Transaction cannot be canceled from its current state.',
+            ], 412);
         }
 
         $transaction->update([
@@ -327,6 +388,13 @@ class CoreApiController extends Controller
                 'status_code' => '404',
                 'status_message' => 'Transaction order_id not found',
             ], 404);
+        }
+
+        if (! $transaction->canTransitionTo('expire')) {
+            return response()->json([
+                'status_code' => '412',
+                'status_message' => 'Transaction cannot be expired from its current state.',
+            ], 412);
         }
 
         $transaction->update([
