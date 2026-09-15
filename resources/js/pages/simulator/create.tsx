@@ -301,6 +301,28 @@ export default function SimulatorCreate({ merchant, apiKey, defaultOrderId, bank
                                         </div>
                                     )}
 
+                                    {result.transaction.biller_code && result.transaction.bill_key && (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+                                                <div className="text-[10px] uppercase text-neutral-400 font-semibold">Biller Code</div>
+                                                <div className="text-lg font-mono font-bold text-amber-500 mt-0.5">{result.transaction.biller_code}</div>
+                                            </div>
+                                            <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+                                                <div className="text-[10px] uppercase text-neutral-400 font-semibold">Bill Key</div>
+                                                <div className="text-lg font-mono font-bold text-blue-500 mt-0.5">{result.transaction.bill_key}</div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {(result.transaction.va_number || result.transaction.bill_key) && (
+                                        <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 text-[11px] text-neutral-600 dark:text-neutral-400">
+                                            <strong className="text-blue-600 dark:text-blue-400">Data pembayaran sandbox:</strong>{' '}
+                                            gunakan Nomor VA untuk bank transfer. Untuk Mandiri gunakan Biller Code dan Bill Key.
+                                            Pembayaran nyata dari ATM/mobile banking tidak terhubung ke simulator; klik
+                                            <strong> Simulasikan Bayar Sukses</strong> pada halaman Mock Snap untuk mengubah status menjadi settlement.
+                                        </div>
+                                    )}
+
                                     {result.snap_url && (
                                         <div className="space-y-2">
                                             <a

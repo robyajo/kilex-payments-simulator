@@ -221,6 +221,12 @@ export default function Docs() {
                             <p className="text-neutral-600 dark:text-neutral-400">
                                 Mendukung channel pembayaran: <code>bank_transfer</code> (bca, bni, bri, permata), <code>echannel</code> (Mandiri Bill), <code>qris</code>, <code>gopay</code>, dan <code>cstore</code>.
                             </p>
+                            <div className="p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-neutral-600 dark:text-neutral-400">
+                                <strong className="text-amber-600 dark:text-amber-400">Catatan Virtual Account:</strong>{' '}
+                                bank transfer mengembalikan <code>va_numbers</code>. Mandiri menggunakan format
+                                <code> biller_code</code> dan <code>bill_key</code> melalui <code>echannel</code>.
+                                Nomor tersebut adalah identifier sandbox; penyelesaian pembayaran dilakukan dari Mock Snap Simulator.
+                            </div>
 
                             <div className="space-y-2">
                                 <div className="text-xs text-neutral-400">Contoh Request BCA Virtual Account:</div>
