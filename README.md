@@ -46,6 +46,25 @@ For Core API sandbox testing, use the response as follows:
 
 The simulator does not connect to real bank or QRIS networks. The hosted payment URL is the sandbox payment surface; after the tester chooses **Simulasikan Bayar Sukses**, the transaction becomes `settlement` and the configured webhook is queued.
 
+## Stripe test mode
+
+Choose **Stripe saja** or **Midtrans + Stripe** under dashboard settings. The simulator generates `sk_test_` and `pk_test_` credentials. Stripe requests use:
+
+```text
+Authorization: Bearer sk_test_...
+```
+
+Supported endpoints:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| POST | `/api/stripe/v1/payment_intents` | Create a PaymentIntent |
+| GET | `/api/stripe/v1/payment_intents/{id}` | Retrieve a PaymentIntent |
+| POST | `/api/stripe/v1/payment_intents/{id}/confirm` | Simulate confirmation/success |
+| POST | `/api/stripe/v1/checkout/sessions` | Create a hosted Checkout Session |
+
+PaymentIntent responses include Stripe-style `id`, `client_secret`, `status`, and `amount_received`. Checkout Session responses include a `url`; opening it is the sandbox checkout surface. Confirming a PaymentIntent changes it to `succeeded` and queues a Stripe-style `payment_intent.succeeded` webhook. This is a test-mode compatibility module and does not connect to Stripe's network.
+
 ## Webhooks
 
 Configure a notification URL under **Settings → API Keys**. Settlement, cancellation, expiration, and denial enqueue a signed notification. Failed or non-2xx deliveries are retried by the queue and recorded in `webhook_logs`.

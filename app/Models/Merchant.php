@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property string $name
  * @property string $merchant_code
+ * @property string $payment_providers
  * @property string|null $notification_url
  * @property string|null $finish_url
  * @property string|null $unfinish_url
@@ -37,11 +38,23 @@ class Merchant extends Model
         'user_id',
         'name',
         'merchant_code',
+        'payment_providers',
         'notification_url',
         'finish_url',
         'unfinish_url',
         'error_url',
+        'stripe_secret_key',
+        'stripe_secret_key_hash',
+        'stripe_publishable_key',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'stripe_secret_key' => 'encrypted',
+            'stripe_publishable_key' => 'encrypted',
+        ];
+    }
 
     /**
      * Get the user that owns the merchant.
@@ -99,5 +112,10 @@ class Merchant extends Model
         }
 
         return $key;
+    }
+
+    public function supportsProvider(string $provider): bool
+    {
+        return $this->payment_providers === 'both' || $this->payment_providers === $provider;
     }
 }
