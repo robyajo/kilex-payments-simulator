@@ -46,7 +46,7 @@ const mainNavItems: NavItem[] = [
 const footerNavItems: NavItem[] = [
     {
         title: 'Simulator Docs',
-        href: '/dashboard/settings/api-keys#docs',
+        href: '/docs',
         icon: BookOpen,
     },
 ];
