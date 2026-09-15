@@ -14,6 +14,8 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        $appUrl = rtrim(config('app.url'), '/');
+
         // 1. Seed Administrator User
         $admin = User::firstOrCreate(
             ['email' => 'admin@kilexpay.test'],
@@ -63,9 +65,9 @@ class UserSeeder extends Seeder
                 'name' => 'Mituni Store Global',
                 'merchant_code' => 'G283910293',
                 'notification_url' => 'https://webhook.site/mituni-notification',
-                'finish_url' => 'https://mituni.test/payment/success',
-                'unfinish_url' => 'https://mituni.test/payment/pending',
-                'error_url' => 'https://mituni.test/payment/failed',
+                'finish_url' => "{$appUrl}/payment/success",
+                'unfinish_url' => "{$appUrl}/payment/pending",
+                'error_url' => "{$appUrl}/payment/failed",
             ]
         );
 
