@@ -18,6 +18,7 @@ import {
     Link as LinkIcon,
     ShieldAlert
     ,CreditCard
+    ,Terminal
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 
@@ -52,6 +53,12 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
     const [activeProvider, setActiveProvider] = useState<'midtrans' | 'stripe'>(
         merchant.payment_providers === 'stripe' ? 'stripe' : 'midtrans',
     );
+    const [apiTestAmount, setApiTestAmount] = useState('150000');
+    const [apiTestOrderId, setApiTestOrderId] = useState(`TEST-${Date.now()}`);
+    const [apiTestMethod, setApiTestMethod] = useState<'bank_transfer' | 'qris'>('bank_transfer');
+    const [apiTestBank, setApiTestBank] = useState('bca');
+    const [apiTestLoading, setApiTestLoading] = useState(false);
+    const [apiTestResult, setApiTestResult] = useState<{ status: number; body: unknown } | null>(null);
 
     const { data, setData, put, processing, errors } = useForm({
         name: merchant.name || '',
@@ -115,6 +122,52 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
         setCopied(label);
         toast.success(`${label} disalin ke clipboard!`);
         setTimeout(() => setCopied(null), 2000);
+    };
+
+    const runApiTest = async () => {
+        setApiTestLoading(true);
+        setApiTestResult(null);
+
+        const isStripe = activeProvider === 'stripe';
+        const payload = isStripe
+            ? { amount: Number(apiTestAmount), currency: 'idr', metadata: { order_id: apiTestOrderId } }
+            : {
+                payment_type: apiTestMethod,
+                transaction_details: { order_id: apiTestOrderId, gross_amount: Number(apiTestAmount) },
+                ...(apiTestMethod === 'bank_transfer' ? { bank_transfer: { bank: apiTestBank } } : {}),
+            };
+
+        try {
+            const response = await fetch(isStripe ? '/api/stripe/v1/payment_intents' : '/api/v2/charge', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: isStripe
+                        ? `Bearer ${merchant.stripe_secret_key}`
+                        : `Basic ${window.btoa(`${apiKey.server_key}:`)}`,
+                },
+                body: JSON.stringify(payload),
+            });
+            const text = await response.text();
+            let body: unknown;
+            try {
+                body = JSON.parse(text);
+            } catch {
+                body = text;
+            }
+            setApiTestResult({ status: response.status, body });
+            if (response.ok) toast.success(`${isStripe ? 'Stripe' : 'Midtrans'} API berhasil diuji.`);
+            else toast.error(`API mengembalikan HTTP ${response.status}.`);
+        } catch (error) {
+            setApiTestResult({
+                status: 0,
+                body: { error: error instanceof Error ? error.message : 'Request gagal dikirim.' },
+            });
+            toast.error('Request API gagal dikirim.');
+        } finally {
+            setApiTestLoading(false);
+        }
     };
 
     return (
@@ -261,6 +314,81 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
                         </div>
                     </div>
                 )}
+
+                <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900/90 border border-emerald-500/20 shadow-sm space-y-5">
+                    <div className="flex items-center gap-2">
+                        <Terminal className="size-5 text-emerald-500" />
+                        <div>
+                            <h2 className="text-base font-bold text-neutral-900 dark:text-white">API Tester Sandbox</h2>
+                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                                Kirim request langsung dengan credential provider aktif dan lihat bentuk response JSON.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                        <div className="space-y-1.5">
+                            <span className="font-semibold text-neutral-700 dark:text-neutral-300">Provider</span>
+                            <div className="rounded-xl bg-neutral-100 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-3 py-2 font-semibold">
+                                {activeProvider === 'stripe' ? 'Stripe Test Mode' : 'Midtrans Sandbox'}
+                            </div>
+                        </div>
+                        <label className="space-y-1.5">
+                            <span className="font-semibold text-neutral-700 dark:text-neutral-300">Order ID</span>
+                            <input value={apiTestOrderId} onChange={(e) => setApiTestOrderId(e.target.value)} className="w-full rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-3 py-2 font-mono" />
+                        </label>
+                        <label className="space-y-1.5">
+                            <span className="font-semibold text-neutral-700 dark:text-neutral-300">Nominal (IDR)</span>
+                            <input type="number" min="1000" step="1000" value={apiTestAmount} onChange={(e) => setApiTestAmount(e.target.value)} className="w-full rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-3 py-2 font-mono" />
+                        </label>
+                        {activeProvider === 'midtrans' && (
+                            <label className="space-y-1.5">
+                                <span className="font-semibold text-neutral-700 dark:text-neutral-300">Metode</span>
+                                <select value={apiTestMethod} onChange={(e) => setApiTestMethod(e.target.value as 'bank_transfer' | 'qris')} className="w-full rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-3 py-2">
+                                    <option value="bank_transfer">Bank Transfer / VA</option>
+                                    <option value="qris">QRIS</option>
+                                </select>
+                            </label>
+                        )}
+                        {activeProvider === 'midtrans' && apiTestMethod === 'bank_transfer' && (
+                            <label className="space-y-1.5">
+                                <span className="font-semibold text-neutral-700 dark:text-neutral-300">Bank</span>
+                                <select value={apiTestBank} onChange={(e) => setApiTestBank(e.target.value)} className="w-full rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-3 py-2">
+                                    <option value="bca">BCA</option>
+                                    <option value="bni">BNI</option>
+                                    <option value="bri">BRI</option>
+                                    <option value="mandiri">Mandiri</option>
+                                    <option value="permata">Permata</option>
+                                    <option value="cimb">CIMB</option>
+                                </select>
+                            </label>
+                        )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <button type="button" onClick={runApiTest} disabled={apiTestLoading} className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 text-xs font-semibold flex items-center gap-2 disabled:opacity-60">
+                            {apiTestLoading ? <RefreshCw className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+                            {apiTestLoading ? 'Mengirim request...' : `Test ${activeProvider === 'stripe' ? 'Stripe PaymentIntent' : 'Midtrans Charge'}`}
+                        </button>
+                        <span className="text-[11px] text-neutral-500">
+                            Endpoint: <code>{activeProvider === 'stripe' ? 'POST /api/stripe/v1/payment_intents' : 'POST /api/v2/charge'}</code>
+                        </span>
+                    </div>
+
+                    {apiTestResult && (
+                        <div className="rounded-xl overflow-hidden border border-neutral-800 bg-neutral-950">
+                            <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-800 text-[11px]">
+                                <span className="font-semibold text-neutral-300">API Response JSON</span>
+                                <span className={`font-bold ${apiTestResult.status >= 200 && apiTestResult.status < 300 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    HTTP {apiTestResult.status || 'NETWORK ERROR'}
+                                </span>
+                            </div>
+                            <pre className="p-4 text-[11px] leading-relaxed text-emerald-300 overflow-x-auto max-h-80">
+                                {JSON.stringify(apiTestResult.body, null, 2)}
+                            </pre>
+                        </div>
+                    )}
+                </div>
 
                 {/* Webhook & URLs Configuration Form */}
                 <form onSubmit={handleSaveMerchant} className="p-6 rounded-2xl bg-white dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
