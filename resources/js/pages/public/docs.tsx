@@ -21,12 +21,111 @@ import { toast } from 'sonner';
 export default function Docs() {
     const [copied, setCopied] = useState<string | null>(null);
     const [activeLang, setActiveLang] = useState<'php' | 'node' | 'python' | 'curl'>('php');
+    const [playgroundProvider, setPlaygroundProvider] = useState<'midtrans' | 'stripe'>('midtrans');
+    const [playgroundEndpoint, setPlaygroundEndpoint] = useState('charge');
+    const [playgroundKey, setPlaygroundKey] = useState('');
+    const [playgroundUrl, setPlaygroundUrl] = useState('/api/v2/charge');
+    const [playgroundBody, setPlaygroundBody] = useState(JSON.stringify({
+        payment_type: 'qris',
+        transaction_details: { order_id: 'DOCS-QRIS-001', gross_amount: 150000 },
+    }, null, 2));
+    const [playgroundLoading, setPlaygroundLoading] = useState(false);
+    const [playgroundResponse, setPlaygroundResponse] = useState<{ status: number; body: unknown } | null>(null);
+    const [playgroundError, setPlaygroundError] = useState<string | null>(null);
 
     const copyCode = (code: string, id: string) => {
         navigator.clipboard.writeText(code);
         setCopied(id);
         toast.success('Kode berhasil disalin!');
         setTimeout(() => setCopied(null), 2000);
+    };
+
+    const updatePlaygroundEndpoint = (provider: 'midtrans' | 'stripe', endpoint: string) => {
+        setPlaygroundProvider(provider);
+        setPlaygroundEndpoint(endpoint);
+
+        if (provider === 'midtrans') {
+            const defaults: Record<string, { url: string; body: object }> = {
+                snap: {
+                    url: '/api/snap/v1/transactions',
+                    body: { transaction_details: { order_id: 'DOCS-SNAP-001', gross_amount: 150000 } },
+                },
+                charge: {
+                    url: '/api/v2/charge',
+                    body: { payment_type: 'qris', transaction_details: { order_id: 'DOCS-QRIS-001', gross_amount: 150000 } },
+                },
+                status: { url: '/api/v2/DOCS-QRIS-001/status', body: {} },
+                cancel: { url: '/api/v2/DOCS-QRIS-001/cancel', body: {} },
+                expire: { url: '/api/v2/DOCS-QRIS-001/expire', body: {} },
+            };
+            const selected = defaults[endpoint] ?? defaults.charge;
+            setPlaygroundUrl(selected.url);
+            setPlaygroundBody(JSON.stringify(selected.body, null, 2));
+        } else {
+            const defaults: Record<string, { url: string; body: object }> = {
+                intent: {
+                    url: '/api/stripe/v1/payment_intents',
+                    body: { amount: 150000, currency: 'idr', metadata: { order_id: 'DOCS-STRIPE-001' } },
+                },
+                retrieve: { url: '/api/stripe/v1/payment_intents/pi_replace_me', body: {} },
+                confirm: { url: '/api/stripe/v1/payment_intents/pi_replace_me/confirm', body: {} },
+                session: {
+                    url: '/api/stripe/v1/checkout/sessions',
+                    body: {
+                        line_items: [{ price_data: { currency: 'idr', unit_amount: 150000, product_data: { name: 'Documentation test item' } }, quantity: 1 }],
+                        success_url: `${window.location.origin}/docs?success=1`,
+                        cancel_url: `${window.location.origin}/docs?cancelled=1`,
+                    },
+                },
+            };
+            const selected = defaults[endpoint] ?? defaults.intent;
+            setPlaygroundUrl(selected.url);
+            setPlaygroundBody(JSON.stringify(selected.body, null, 2));
+        }
+        setPlaygroundResponse(null);
+        setPlaygroundError(null);
+    };
+
+    const runPlaygroundRequest = async () => {
+        setPlaygroundLoading(true);
+        setPlaygroundResponse(null);
+        setPlaygroundError(null);
+
+        let body: object | undefined;
+        try {
+            body = playgroundBody.trim() ? JSON.parse(playgroundBody) : undefined;
+        } catch {
+            setPlaygroundError('Request JSON tidak valid. Periksa koma, tanda kutip, dan kurung.');
+            setPlaygroundLoading(false);
+            return;
+        }
+
+        const method = ['status', 'retrieve'].includes(playgroundEndpoint) ? 'GET' : 'POST';
+        try {
+            const response = await fetch(playgroundUrl, {
+                method,
+                headers: {
+                    Accept: 'application/json',
+                    ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
+                    Authorization: playgroundProvider === 'stripe'
+                        ? `Bearer ${playgroundKey.trim()}`
+                        : `Basic ${window.btoa(`${playgroundKey.trim()}:`)}`,
+                },
+                ...(method === 'POST' && body ? { body: JSON.stringify(body) } : {}),
+            });
+            const text = await response.text();
+            let responseBody: unknown;
+            try {
+                responseBody = JSON.parse(text);
+            } catch {
+                responseBody = text;
+            }
+            setPlaygroundResponse({ status: response.status, body: responseBody });
+        } catch (error) {
+            setPlaygroundError(error instanceof Error ? error.message : 'Request gagal dikirim.');
+        } finally {
+            setPlaygroundLoading(false);
+        }
     };
 
     return (
@@ -48,26 +147,29 @@ export default function Docs() {
                             <a href="#authentication" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
                                 2. Otentikasi & API Keys
                             </a>
+                            <a href="#api-playground" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
+                                3. API Playground Tanpa Login
+                            </a>
                             <a href="#snap-api" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
-                                3. Snap API Token
+                                4. Snap API Token
                             </a>
                             <a href="#core-api" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
-                                4. Core API Direct Charge
+                                5. Core API Direct Charge
                             </a>
                             <a href="#status-cancel" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
-                                5. Check Status & Cancel
+                                6. Check Status & Cancel
                             </a>
                             <a href="#signature" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
-                                6. Verifikasi Signature SHA-512
+                                7. Verifikasi Signature SHA-512
                             </a>
                             <a href="#webhook" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
-                                7. Webhook Notifikasi
+                                8. Webhook Notifikasi
                             </a>
                             <a href="#stripe-api" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
-                                8. Stripe Test API
+                                9. Stripe Test API
                             </a>
                             <a href="#sdk-examples" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
-                                9. Contoh Kode SDK
+                                10. Contoh Kode SDK
                             </a>
                         </nav>
 
@@ -124,6 +226,112 @@ export default function Docs() {
                                         <div className="text-indigo-600 dark:text-indigo-400 font-bold">http://localhost:8001/api/stripe/v1</div>
                                     </div>
                                 </div>
+                            </div>
+                        </section>
+
+                        <section id="api-playground" className="space-y-4 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">03</span>
+                                <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white">API Playground Tanpa Login</h2>
+                            </div>
+                            <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                                Uji endpoint yang ada di dokumentasi langsung dari browser tanpa login ke dashboard. Masukkan credential sandbox milik Anda,
+                                pilih endpoint, edit JSON request, lalu klik kirim. Credential hanya digunakan untuk request browser ini dan tidak disimpan oleh halaman.
+                            </p>
+
+                            <div className="p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <label className="space-y-1.5">
+                                        <span className="font-semibold text-neutral-700 dark:text-neutral-300">Provider</span>
+                                        <select
+                                            value={playgroundProvider}
+                                            onChange={(event) => updatePlaygroundEndpoint(event.target.value as 'midtrans' | 'stripe', event.target.value === 'stripe' ? 'intent' : 'charge')}
+                                            className="w-full rounded-xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-3 py-2"
+                                        >
+                                            <option value="midtrans">Midtrans Sandbox</option>
+                                            <option value="stripe">Stripe Test Mode</option>
+                                        </select>
+                                    </label>
+                                    <label className="space-y-1.5">
+                                        <span className="font-semibold text-neutral-700 dark:text-neutral-300">Secret/Server Key</span>
+                                        <input
+                                            type="password"
+                                            value={playgroundKey}
+                                            onChange={(event) => setPlaygroundKey(event.target.value)}
+                                            placeholder={playgroundProvider === 'stripe' ? 'sk_test_...' : 'SB-Mid-server-...'}
+                                            className="w-full rounded-xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-3 py-2 font-mono"
+                                        />
+                                    </label>
+                                </div>
+                                <label className="space-y-1.5 block">
+                                    <span className="font-semibold text-neutral-700 dark:text-neutral-300">Endpoint</span>
+                                    <select
+                                        value={playgroundEndpoint}
+                                        onChange={(event) => updatePlaygroundEndpoint(playgroundProvider, event.target.value)}
+                                        className="w-full rounded-xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-3 py-2 font-mono"
+                                    >
+                                        {playgroundProvider === 'midtrans' ? (
+                                            <>
+                                                <option value="snap">POST /api/snap/v1/transactions</option>
+                                                <option value="charge">POST /api/v2/charge</option>
+                                                <option value="status">GET /api/v2/{'{order_id}'}/status</option>
+                                                <option value="cancel">POST /api/v2/{'{order_id}'}/cancel</option>
+                                                <option value="expire">POST /api/v2/{'{order_id}'}/expire</option>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <option value="intent">POST /api/stripe/v1/payment_intents</option>
+                                                <option value="retrieve">GET /api/stripe/v1/payment_intents/{'{id}'}</option>
+                                                <option value="confirm">POST /api/stripe/v1/payment_intents/{'{id}'}/confirm</option>
+                                                <option value="session">POST /api/stripe/v1/checkout/sessions</option>
+                                            </>
+                                        )}
+                                    </select>
+                                </label>
+                                <label className="space-y-1.5 block">
+                                    <span className="font-semibold text-neutral-700 dark:text-neutral-300">Request URL</span>
+                                    <input
+                                        value={playgroundUrl}
+                                        onChange={(event) => setPlaygroundUrl(event.target.value)}
+                                        className="w-full rounded-xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-3 py-2 font-mono text-xs"
+                                    />
+                                </label>
+                                <label className="space-y-1.5 block">
+                                    <span className="font-semibold text-neutral-700 dark:text-neutral-300">Request JSON (kosongkan untuk GET)</span>
+                                    <textarea
+                                        value={playgroundBody}
+                                        onChange={(event) => setPlaygroundBody(event.target.value)}
+                                        rows={9}
+                                        spellCheck={false}
+                                        className="w-full rounded-xl bg-neutral-950 text-neutral-200 border border-neutral-800 px-3 py-2 font-mono text-xs"
+                                    />
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={runPlaygroundRequest}
+                                    disabled={playgroundLoading || !playgroundKey.trim()}
+                                    className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 font-semibold disabled:opacity-50"
+                                >
+                                    {playgroundLoading ? 'Mengirim request...' : 'Kirim Request'}
+                                </button>
+                                {playgroundError && (
+                                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-rose-600 dark:text-rose-400 font-mono text-xs">
+                                        {playgroundError}
+                                    </div>
+                                )}
+                                {playgroundResponse && (
+                                    <div className="rounded-xl overflow-hidden border border-neutral-800 bg-neutral-950">
+                                        <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-800 text-xs">
+                                            <span className="font-semibold text-neutral-300">Response</span>
+                                            <span className={playgroundResponse.status >= 200 && playgroundResponse.status < 300 ? 'text-emerald-400' : 'text-rose-400'}>
+                                                HTTP {playgroundResponse.status}
+                                            </span>
+                                        </div>
+                                        <pre className="p-4 text-emerald-300 font-mono text-xs overflow-x-auto max-h-96">
+                                            {JSON.stringify(playgroundResponse.body, null, 2)}
+                                        </pre>
+                                    </div>
+                                )}
                             </div>
                         </section>
 
