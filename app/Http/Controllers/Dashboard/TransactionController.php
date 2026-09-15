@@ -114,7 +114,9 @@ class TransactionController extends Controller
     public function markPaid(Transaction $transaction, Request $request): RedirectResponse|JsonResponse
     {
         $this->authorizeMerchant($request, $transaction);
-        abort_unless($transaction->canTransitionTo('settlement'), 412, 'Transaction cannot be settled from its current state.');
+        if (! $transaction->canTransitionTo('settlement')) {
+            return $this->invalidTransitionResponse($request, $transaction, 'settled');
+        }
 
         $transaction->update([
             'transaction_status' => 'settlement',
@@ -138,7 +140,9 @@ class TransactionController extends Controller
     public function markExpire(Transaction $transaction, Request $request): RedirectResponse|JsonResponse
     {
         $this->authorizeMerchant($request, $transaction);
-        abort_unless($transaction->canTransitionTo('expire'), 412, 'Transaction cannot be expired from its current state.');
+        if (! $transaction->canTransitionTo('expire')) {
+            return $this->invalidTransitionResponse($request, $transaction, 'expired');
+        }
 
         $transaction->update([
             'transaction_status' => 'expire',
@@ -161,7 +165,9 @@ class TransactionController extends Controller
     public function markCancel(Transaction $transaction, Request $request): RedirectResponse|JsonResponse
     {
         $this->authorizeMerchant($request, $transaction);
-        abort_unless($transaction->canTransitionTo('cancel'), 412, 'Transaction cannot be canceled from its current state.');
+        if (! $transaction->canTransitionTo('cancel')) {
+            return $this->invalidTransitionResponse($request, $transaction, 'canceled');
+        }
 
         $transaction->update([
             'transaction_status' => 'cancel',
@@ -208,5 +214,23 @@ class TransactionController extends Controller
         if ($transaction->merchant_id !== $merchant->id) {
             abort(403, 'Unauthorized access to transaction.');
         }
+    }
+
+    protected function invalidTransitionResponse(
+        Request $request,
+        Transaction $transaction,
+        string $targetStatus
+    ): RedirectResponse|JsonResponse {
+        $message = "Transaction cannot be {$targetStatus} from its current state ({$transaction->transaction_status}).";
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+                'transaction_status' => $transaction->transaction_status,
+            ], 412);
+        }
+
+        return back()->with('error', $message);
     }
 }
