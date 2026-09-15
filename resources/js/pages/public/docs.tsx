@@ -102,6 +102,12 @@ export default function Docs() {
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
                                 Simulator ini dirancang dengan standar kompatibilitas <strong>Midtrans Core API & Snap API</strong>. Untuk mengarahkan aplikasi klien Anda ke simulator ini, cukup ubah konfigurasi <code>Base URL</code> pada SDK atau HTTP Client Anda:
                             </p>
+                            <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/20 text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                                <strong className="text-indigo-600 dark:text-indigo-400">Siapa yang memilih provider?</strong>{' '}
+                                Provider dipilih oleh merchant di <strong>Settings → API Keys</strong>:
+                                pilih <strong>Midtrans saja</strong>, <strong>Stripe saja</strong>, atau <strong>Midtrans + Stripe</strong>.
+                                Customer tidak memilih provider pada halaman pembayaran; customer memilih metode pembayaran yang ditampilkan oleh provider tersebut.
+                            </div>
 
                             <div className="p-4 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-2">
                                 <div className="text-[11px] font-bold uppercase text-neutral-400">Simulator Base URLs:</div>

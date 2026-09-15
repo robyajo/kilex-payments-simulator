@@ -132,7 +132,19 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
                         API Credentials & Webhook Settings
                     </h1>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                        Kelola kredensial Midtrans Server Key, Client Key, konfigurasi Notification URL, dan contoh integrasi SDK.
+                        Pilih provider yang digunakan aplikasi, kelola kredensial API, konfigurasi webhook, dan contoh integrasi SDK.
+                    </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-blue-500/5 border border-blue-500/20 space-y-2">
+                    <div className="flex items-center gap-2">
+                        <CreditCard className="size-5 text-blue-500" />
+                        <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Provider pembayaran aplikasi</h2>
+                    </div>
+                    <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                        Pemilik aplikasi memilih Midtrans, Stripe, atau keduanya di field <strong>Payment Provider</strong> pada form di bawah.
+                        Pilihan ini menentukan API dan kredensial yang boleh digunakan aplikasi merchant. Customer tidak memilih provider di halaman pembayaran;
+                        customer memilih metode pembayaran yang tersedia di dalam provider tersebut.
                     </p>
                 </div>
 
@@ -231,7 +243,7 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                         <div className="space-y-1.5">
-                            <label className="font-semibold text-neutral-700 dark:text-neutral-300">Payment Provider</label>
+                            <label className="font-semibold text-neutral-700 dark:text-neutral-300">Payment Provider (dipilih merchant)</label>
                             <select
                                 value={data.payment_providers}
                                 onChange={(e) => setData('payment_providers', e.target.value as 'midtrans' | 'stripe' | 'both')}
@@ -241,6 +253,9 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
                                 <option value="stripe">Stripe saja</option>
                                 <option value="both">Midtrans + Stripe</option>
                             </select>
+                            <p className="text-[11px] leading-relaxed text-neutral-500">
+                                Pilih <strong>Midtrans + Stripe</strong> jika aplikasi Anda memanggil kedua API.
+                            </p>
                             {errors.payment_providers && <span className="text-rose-500 text-[11px]">{errors.payment_providers}</span>}
                         </div>
 
