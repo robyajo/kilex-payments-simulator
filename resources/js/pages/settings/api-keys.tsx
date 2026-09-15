@@ -49,6 +49,9 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
     const [activeCodeTab, setActiveCodeTab] = useState<'php' | 'node' | 'curl' | 'verify'>('php');
     const [pingLoading, setPingLoading] = useState(false);
     const [pingResult, setPingResult] = useState<any>(null);
+    const [activeProvider, setActiveProvider] = useState<'midtrans' | 'stripe'>(
+        merchant.payment_providers === 'stripe' ? 'stripe' : 'midtrans',
+    );
 
     const { data, setData, put, processing, errors } = useForm({
         name: merchant.name || '',
@@ -148,8 +151,35 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
                     </p>
                 </div>
 
-                {/* API Credentials Box */}
-                <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
+                <div className="flex flex-wrap gap-2 p-1 rounded-xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                    <button
+                        type="button"
+                        onClick={() => setActiveProvider('midtrans')}
+                        disabled={merchant.payment_providers === 'stripe'}
+                        className={`flex-1 min-w-40 rounded-lg px-4 py-2.5 text-xs font-semibold transition-colors ${
+                            activeProvider === 'midtrans'
+                                ? 'bg-white dark:bg-neutral-800 text-amber-600 dark:text-amber-400 shadow-sm'
+                                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white disabled:opacity-40'
+                        }`}
+                    >
+                        Midtrans Sandbox
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveProvider('stripe')}
+                        disabled={merchant.payment_providers === 'midtrans'}
+                        className={`flex-1 min-w-40 rounded-lg px-4 py-2.5 text-xs font-semibold transition-colors ${
+                            activeProvider === 'stripe'
+                                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white disabled:opacity-40'
+                        }`}
+                    >
+                        Stripe Test Mode
+                    </button>
+                </div>
+
+                {activeProvider === 'midtrans' && merchant.payment_providers !== 'stripe' && (
+                <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900/90 border border-amber-500/20 shadow-sm space-y-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <KeyRound className="size-5 text-amber-500" />
@@ -208,10 +238,10 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
                         </div>
                     </div>
                 </div>
+                )}
 
-                {/* Stripe Credentials */}
-                {(merchant.payment_providers === 'stripe' || merchant.payment_providers === 'both') && (
-                    <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+                {activeProvider === 'stripe' && merchant.payment_providers !== 'midtrans' && (
+                    <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900/90 border border-indigo-500/20 shadow-sm space-y-4">
                         <div className="flex items-center gap-2">
                             <CreditCard className="size-5 text-indigo-500" />
                             <div>
