@@ -22,7 +22,7 @@ import {
     Copy,
     Check,
 } from "lucide-react";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 
 export default function Welcome() {
     const { auth } = usePage().props as any;
@@ -39,7 +39,6 @@ export default function Welcome() {
     return (
         <PublicLayout>
             <Head title="Kilex Payment Simulator - Midtrans-Compatible Mock Gateway" />
-            <Toaster position="top-right" richColors />
 
             {/* Hero Section */}
             <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28">

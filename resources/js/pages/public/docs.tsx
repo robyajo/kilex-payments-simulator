@@ -16,7 +16,7 @@ import {
     CheckCircle2,
     Lock
 } from 'lucide-react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 
 export default function Docs() {
     const [copied, setCopied] = useState<string | null>(null);
@@ -32,7 +32,6 @@ export default function Docs() {
     return (
         <PublicLayout>
             <Head title="Dokumentasi API Midtrans Simulator - KilexPay" />
-            <Toaster position="top-right" richColors />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
                 <div className="flex flex-col lg:flex-row gap-10">

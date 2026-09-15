@@ -20,7 +20,7 @@ import {
     ,CreditCard
     ,Terminal
 } from 'lucide-react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 
 interface Props {
     merchant: {
@@ -178,7 +178,6 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
             ]}
         >
             <Head title="API Keys & Webhook Settings" />
-            <Toaster position="top-right" richColors />
 
             <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-6xl mx-auto w-full">
 

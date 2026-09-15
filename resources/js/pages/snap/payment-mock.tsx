@@ -19,7 +19,7 @@ import {
     Sparkles,
     RefreshCw,
 } from "lucide-react";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 
 interface BankInfo {
     bank: string;
@@ -252,7 +252,6 @@ export default function PaymentMock({
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans selection:bg-blue-500/30 selection:text-blue-300">
             <Head title={`Checkout - ${merchant.name}`} />
-            <Toaster position="top-right" richColors />
 
             {/* Top Sandbox Simulator Control Bar */}
             <div className="sticky top-0 z-50 bg-linear-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 backdrop-blur-md border-b border-amber-500/30 px-4 py-2.5">

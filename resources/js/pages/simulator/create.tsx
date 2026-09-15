@@ -14,7 +14,7 @@ import {
     Check,
     RefreshCw
 } from 'lucide-react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 
 interface BankOption {
     code: string;
@@ -114,7 +114,6 @@ export default function SimulatorCreate({ merchant, apiKey, defaultOrderId, bank
             ]}
         >
             <Head title="Sandbox Quick Tester" />
-            <Toaster position="top-right" richColors />
 
             <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-5xl mx-auto w-full">
 
