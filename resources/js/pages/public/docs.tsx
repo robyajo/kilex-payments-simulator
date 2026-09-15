@@ -114,6 +114,10 @@ export default function Docs() {
                                         <div className="text-[10px] text-neutral-500 font-sans">Core API Base URL</div>
                                         <div className="text-blue-600 dark:text-blue-400 font-bold">http://localhost:8001/api/v2</div>
                                     </div>
+                                    <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+                                        <div className="text-[10px] text-neutral-500 font-sans">Stripe Test API Base URL</div>
+                                        <div className="text-indigo-600 dark:text-indigo-400 font-bold">http://localhost:8001/api/stripe/v1</div>
+                                    </div>
                                 </div>
                             </div>
                         </section>
@@ -124,7 +128,8 @@ export default function Docs() {
                                 <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white">Stripe Test API</h2>
                             </div>
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                Aktifkan Stripe saja atau Midtrans + Stripe dari Settings. Gunakan Secret Key Stripe test mode dari backend dengan header <code>Authorization: Bearer sk_test_...</code>.
+                                Aktifkan <strong>Stripe saja</strong> atau <strong>Midtrans + Stripe</strong> dari Settings → API Keys.
+                                Simpan Secret Key Stripe test mode di backend merchant dan kirimkan dengan header <code>Authorization: Bearer sk_test_...</code>..
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs">
                                 <div className="p-3 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
@@ -138,7 +143,7 @@ export default function Docs() {
                             </div>
                             <pre className="p-4 rounded-xl bg-neutral-950 text-neutral-200 font-mono text-xs overflow-x-auto border border-neutral-800">
 {`curl -X POST http://localhost:8001/api/stripe/v1/payment_intents \\
-  -H "Authorization: Bearer sk_test_xxxxx" \\
+  -H "Authorization: Bearer sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \\
   -H "Content-Type: application/json" \\
   -d '{
     "amount": 150000,
@@ -148,18 +153,31 @@ export default function Docs() {
                             </pre>
                             <pre className="p-4 rounded-xl bg-neutral-950 text-emerald-400 font-mono text-xs overflow-x-auto border border-neutral-800">
 {`{
-  "id": "pi_test_...",
+  "id": "pi_...",
   "object": "payment_intent",
   "amount": 150000,
   "currency": "idr",
   "status": "requires_payment_method",
-  "client_secret": "pi_test_..._secret_..."
+  "client_secret": "pi_..._secret_..."
 }`}
                             </pre>
-                            <p className="text-neutral-600 dark:text-neutral-400">
-                                Panggil <code>/confirm</code> untuk menyelesaikan pembayaran simulasi. Status berubah menjadi <code>succeeded</code>,
-                                <code>amount_received</code> terisi, dan webhook Stripe <code>payment_intent.succeeded</code> dikirim ke notification URL.
-                            </p>
+                            <div className="space-y-3 text-neutral-600 dark:text-neutral-400">
+                                <p>
+                                    Panggil <code>GET /api/stripe/v1/payment_intents/{'{id}'}</code> untuk membaca status dan
+                                    <code>POST /api/stripe/v1/payment_intents/{'{id}'}/confirm</code> untuk menyelesaikan pembayaran simulasi.
+                                    Status berubah menjadi <code>succeeded</code> dan <code>amount_received</code> terisi.
+                                </p>
+                                <p>
+                                    Untuk alur Checkout Session, kirim <code>line_items</code>, <code>success_url</code>, dan <code>cancel_url</code>
+                                    ke <code>POST /api/stripe/v1/checkout/sessions</code>, lalu redirect user ke field <code>url</code>.
+                                    Halaman hosted sandbox menampilkan nominal dan menerima kartu test <code>4242 4242 4242 4242</code>,
+                                    expiry masa depan, serta CVC apa pun.
+                                </p>
+                                <p>
+                                    Setelah sukses, webhook <code>payment_intent.succeeded</code> dikirim ke notification URL.
+                                    Pastikan queue worker aktif agar pengiriman webhook diproses.
+                                </p>
+                            </div>
                         </section>
 
                         {/* 2. Authentication */}
