@@ -9,7 +9,9 @@ use App\Services\MidtransSignatureService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,6 +26,14 @@ class SettingController extends Controller
         $user = $request->user();
         $merchant = $user->getOrCreateDefaultMerchant();
         $apiKey = $merchant->getOrCreateApiKey();
+        if (! $merchant->stripe_secret_key) {
+            $secretKey = 'sk_test_'.Str::lower(Str::random(32));
+            $merchant->update([
+                'stripe_secret_key' => $secretKey,
+                'stripe_secret_key_hash' => Hash::make($secretKey),
+                'stripe_publishable_key' => 'pk_test_'.Str::lower(Str::random(32)),
+            ]);
+        }
 
         return Inertia::render('settings/api-keys', [
             'merchant' => [
@@ -34,6 +44,9 @@ class SettingController extends Controller
                 'finish_url' => $merchant->finish_url ?? '',
                 'unfinish_url' => $merchant->unfinish_url ?? '',
                 'error_url' => $merchant->error_url ?? '',
+                'payment_providers' => $merchant->payment_providers ?? 'midtrans',
+                'stripe_secret_key' => $merchant->stripe_secret_key,
+                'stripe_publishable_key' => $merchant->stripe_publishable_key,
             ],
             'apiKey' => [
                 'id' => $apiKey->id,
@@ -60,6 +73,7 @@ class SettingController extends Controller
             'finish_url' => 'nullable|url|max:2000',
             'unfinish_url' => 'nullable|url|max:2000',
             'error_url' => 'nullable|url|max:2000',
+            'payment_providers' => 'required|in:midtrans,stripe,both',
         ]);
 
         $merchant->update($validated);

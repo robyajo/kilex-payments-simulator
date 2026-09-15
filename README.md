@@ -46,6 +46,36 @@ For Core API sandbox testing, use the response as follows:
 
 The simulator does not connect to real bank or QRIS networks. The hosted payment URL is the sandbox payment surface; after the tester chooses **Simulasikan Bayar Sukses**, the transaction becomes `settlement` and the configured webhook is queued.
 
+## Stripe test mode
+
+Choose **Stripe saja** or **Midtrans + Stripe** under **Settings -> API Keys**. The simulator generates encrypted `sk_test_` and `pk_test_` credentials. Keep the secret key on your merchant backend; never expose it in browser code. Stripe requests use:
+
+```text
+Authorization: Bearer sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Supported endpoints:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| POST | `/api/stripe/v1/payment_intents` | Create a PaymentIntent |
+| GET | `/api/stripe/v1/payment_intents/{id}` | Retrieve a PaymentIntent |
+| POST | `/api/stripe/v1/payment_intents/{id}/confirm` | Simulate confirmation/success |
+| POST | `/api/stripe/v1/checkout/sessions` | Create a hosted Checkout Session |
+
+All amounts are integer minor units, so `150000` means IDR 150,000. A typical PaymentIntent integration is:
+
+1. Your backend creates a PaymentIntent and stores the returned `id` and `client_secret`.
+2. Your checkout UI collects test payment details. This simulator accepts `4242 4242 4242 4242`, any future expiry date, and any CVC.
+3. Your backend calls `/confirm` and checks that the response status is `succeeded`.
+4. Your backend consumes `payment_intent.succeeded`, or retrieves the PaymentIntent to reconcile the final status.
+
+For Checkout Sessions, send `line_items`, `success_url`, and `cancel_url` to `/checkout/sessions`. The response contains a hosted `url`, for example `/stripe/checkout/cs_test_...`. Redirect the customer to that URL. The hosted page displays the amount and test-card instructions, and returns a successful sandbox result after the test payment is submitted.
+
+PaymentIntent responses include Stripe-style `id`, `client_secret`, `status`, and `amount_received`. Checkout Session responses include `url`, `amount_total`, `currency`, `status`, and `payment_status`. A successful payment queues the Stripe-style `payment_intent.succeeded` webhook to the merchant notification URL. This is a test-mode compatibility module and does not connect to Stripe's network.
+
+The selected provider controls access: a merchant configured for **Midtrans saja** cannot use Stripe keys, and a merchant configured for **Stripe saja** cannot use Midtrans keys. Select **Midtrans + Stripe** when one merchant application needs both APIs.
+
 ## Webhooks
 
 Configure a notification URL under **Settings → API Keys**. Settlement, cancellation, expiration, and denial enqueue a signed notification. Failed or non-2xx deliveries are retried by the queue and recorded in `webhook_logs`.

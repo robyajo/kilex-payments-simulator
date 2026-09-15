@@ -17,6 +17,7 @@ import {
     Building2,
     Link as LinkIcon,
     ShieldAlert
+    ,CreditCard
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 
@@ -29,6 +30,9 @@ interface Props {
         finish_url: string;
         unfinish_url: string;
         error_url: string;
+        payment_providers: 'midtrans' | 'stripe' | 'both';
+        stripe_secret_key: string;
+        stripe_publishable_key: string;
     };
     apiKey: {
         id: string;
@@ -52,6 +56,7 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
         finish_url: merchant.finish_url || '',
         unfinish_url: merchant.unfinish_url || '',
         error_url: merchant.error_url || '',
+        payment_providers: merchant.payment_providers || 'midtrans',
     });
 
     const handleSaveMerchant = (e: React.FormEvent) => {
@@ -192,6 +197,29 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
                     </div>
                 </div>
 
+                {/* Stripe Credentials */}
+                {(merchant.payment_providers === 'stripe' || merchant.payment_providers === 'both') && (
+                    <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+                        <div className="flex items-center gap-2">
+                            <CreditCard className="size-5 text-indigo-500" />
+                            <div>
+                                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Stripe Test Mode</h2>
+                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">Gunakan Bearer Secret Key hanya dari backend merchant.</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+                                <div className="text-[10px] font-bold uppercase text-neutral-500">Secret Key</div>
+                                <code className="block mt-2 break-all text-indigo-600 dark:text-indigo-400">{merchant.stripe_secret_key}</code>
+                            </div>
+                            <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+                                <div className="text-[10px] font-bold uppercase text-neutral-500">Publishable Key</div>
+                                <code className="block mt-2 break-all text-indigo-600 dark:text-indigo-400">{merchant.stripe_publishable_key}</code>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Webhook & URLs Configuration Form */}
                 <form onSubmit={handleSaveMerchant} className="p-6 rounded-2xl bg-white dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
                     <div className="flex items-center gap-2">
@@ -202,6 +230,20 @@ export default function ApiKeysSettings({ merchant, apiKey, appUrl }: Props) {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div className="space-y-1.5">
+                            <label className="font-semibold text-neutral-700 dark:text-neutral-300">Payment Provider</label>
+                            <select
+                                value={data.payment_providers}
+                                onChange={(e) => setData('payment_providers', e.target.value as 'midtrans' | 'stripe' | 'both')}
+                                className="w-full px-3.5 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-900 dark:text-neutral-100"
+                            >
+                                <option value="midtrans">Midtrans saja</option>
+                                <option value="stripe">Stripe saja</option>
+                                <option value="both">Midtrans + Stripe</option>
+                            </select>
+                            {errors.payment_providers && <span className="text-rose-500 text-[11px]">{errors.payment_providers}</span>}
+                        </div>
+
                         <div className="space-y-1.5">
                             <label className="font-semibold text-neutral-700 dark:text-neutral-300">Nama Merchant</label>
                             <input

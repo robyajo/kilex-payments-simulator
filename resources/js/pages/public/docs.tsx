@@ -64,8 +64,11 @@ export default function Docs() {
                             <a href="#webhook" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
                                 7. Webhook Notifikasi
                             </a>
+                            <a href="#stripe-api" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
+                                8. Stripe Test API
+                            </a>
                             <a href="#sdk-examples" className="block py-1.5 px-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-blue-500 transition-colors">
-                                8. Contoh Kode SDK
+                                9. Contoh Kode SDK
                             </a>
                         </nav>
 
@@ -111,7 +114,69 @@ export default function Docs() {
                                         <div className="text-[10px] text-neutral-500 font-sans">Core API Base URL</div>
                                         <div className="text-blue-600 dark:text-blue-400 font-bold">http://localhost:8001/api/v2</div>
                                     </div>
+                                    <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+                                        <div className="text-[10px] text-neutral-500 font-sans">Stripe Test API Base URL</div>
+                                        <div className="text-indigo-600 dark:text-indigo-400 font-bold">http://localhost:8001/api/stripe/v1</div>
+                                    </div>
                                 </div>
+                            </div>
+                        </section>
+
+                        <section id="stripe-api" className="space-y-4 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">08</span>
+                                <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white">Stripe Test API</h2>
+                            </div>
+                            <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                                Aktifkan <strong>Stripe saja</strong> atau <strong>Midtrans + Stripe</strong> dari Settings → API Keys.
+                                Simpan Secret Key Stripe test mode di backend merchant dan kirimkan dengan header <code>Authorization: Bearer sk_test_...</code>..
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs">
+                                <div className="p-3 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                                    <div className="text-indigo-500 font-bold">POST /api/stripe/v1/payment_intents</div>
+                                    <div className="text-neutral-500 text-[11px] font-sans mt-1">Create PaymentIntent seperti Stripe</div>
+                                </div>
+                                <div className="p-3 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                                    <div className="text-indigo-500 font-bold">POST /api/stripe/v1/checkout/sessions</div>
+                                    <div className="text-neutral-500 text-[11px] font-sans mt-1">Create hosted Checkout Session</div>
+                                </div>
+                            </div>
+                            <pre className="p-4 rounded-xl bg-neutral-950 text-neutral-200 font-mono text-xs overflow-x-auto border border-neutral-800">
+{`curl -X POST http://localhost:8001/api/stripe/v1/payment_intents \\
+  -H "Authorization: Bearer sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "amount": 150000,
+    "currency": "idr",
+    "metadata": { "order_id": "ORDER-STRIPE-001" }
+  }'`}
+                            </pre>
+                            <pre className="p-4 rounded-xl bg-neutral-950 text-emerald-400 font-mono text-xs overflow-x-auto border border-neutral-800">
+{`{
+  "id": "pi_...",
+  "object": "payment_intent",
+  "amount": 150000,
+  "currency": "idr",
+  "status": "requires_payment_method",
+  "client_secret": "pi_..._secret_..."
+}`}
+                            </pre>
+                            <div className="space-y-3 text-neutral-600 dark:text-neutral-400">
+                                <p>
+                                    Panggil <code>GET /api/stripe/v1/payment_intents/{'{id}'}</code> untuk membaca status dan
+                                    <code>POST /api/stripe/v1/payment_intents/{'{id}'}/confirm</code> untuk menyelesaikan pembayaran simulasi.
+                                    Status berubah menjadi <code>succeeded</code> dan <code>amount_received</code> terisi.
+                                </p>
+                                <p>
+                                    Untuk alur Checkout Session, kirim <code>line_items</code>, <code>success_url</code>, dan <code>cancel_url</code>
+                                    ke <code>POST /api/stripe/v1/checkout/sessions</code>, lalu redirect user ke field <code>url</code>.
+                                    Halaman hosted sandbox menampilkan nominal dan menerima kartu test <code>4242 4242 4242 4242</code>,
+                                    expiry masa depan, serta CVC apa pun.
+                                </p>
+                                <p>
+                                    Setelah sukses, webhook <code>payment_intent.succeeded</code> dikirim ke notification URL.
+                                    Pastikan queue worker aktif agar pengiriman webhook diproses.
+                                </p>
                             </div>
                         </section>
 

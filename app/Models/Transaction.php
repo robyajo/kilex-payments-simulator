@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property string $id
  * @property string $merchant_id
+ * @property string $provider
  * @property string $order_id
  * @property float $gross_amount
  * @property string $payment_type
@@ -49,6 +50,7 @@ class Transaction extends Model
      */
     protected $fillable = [
         'merchant_id',
+        'provider',
         'order_id',
         'gross_amount',
         'payment_type',
@@ -68,6 +70,8 @@ class Transaction extends Model
         'customer_details',
         'item_details',
         'snap_token',
+        'provider_reference',
+        'provider_client_secret',
         'expired_at',
         'settlement_time',
     ];

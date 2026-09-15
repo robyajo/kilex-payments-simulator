@@ -36,6 +36,13 @@ class MidtransAuthMiddleware
             ], 401);
         }
 
+        if (! $apiKey->merchant->supportsProvider('midtrans')) {
+            return response()->json([
+                'status_code' => '403',
+                'status_message' => 'Midtrans provider is not enabled for this merchant.',
+            ], 403);
+        }
+
         // Attach merchant and api_key to request attributes
         $request->attributes->set('merchant', $apiKey->merchant);
         $request->attributes->set('apiKey', $apiKey);
