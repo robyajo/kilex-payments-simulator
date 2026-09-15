@@ -22,7 +22,7 @@ Run a queue worker in another terminal so webhook delivery is processed:
 php artisan queue:work --tries=3
 ```
 
-The public documentation is available at `/docs`. Register a user, open **Sandbox Tester**, and create a test transaction. The dashboard exposes generated sandbox server/client keys.
+The public documentation is available at `/docs`. It includes an unauthenticated **API Playground** where an integrator can paste their sandbox key, choose any documented Midtrans or Stripe endpoint, edit the JSON request, and inspect the HTTP status and response without logging in. Register a user only when you need dashboard-generated credentials or the full **Sandbox Tester**.
 
 ## Midtrans-compatible endpoints
 
