@@ -27,7 +27,6 @@ class MidtransAuthMiddleware
 
         $apiKey = ApiKey::with('merchant')
             ->where('server_key', $key)
-            ->orWhere('client_key', $key)
             ->first();
 
         if (! $apiKey || ! $apiKey->merchant) {

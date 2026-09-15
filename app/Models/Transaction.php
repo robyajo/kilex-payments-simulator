@@ -111,4 +111,10 @@ class Transaction extends Model
     {
         return $this->transaction_status === 'expire' || ($this->transaction_status === 'pending' && $this->expired_at->isPast());
     }
+
+    public function canTransitionTo(string $status): bool
+    {
+        return $this->transaction_status === 'pending'
+            && in_array($status, ['settlement', 'expire', 'cancel', 'deny'], true);
+    }
 }
