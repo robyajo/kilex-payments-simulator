@@ -538,7 +538,7 @@ export default function TransactionsIndex({ transactions, filters, serverKey, me
                                                 Tindakan Simulator Cepat:
                                             </div>
                                             <div className="flex flex-wrap items-center gap-2">
-                                                {selectedTx.transaction_status !== 'settlement' && (
+                                                {selectedTx.transaction_status === 'pending' && (
                                                     <button
                                                         onClick={() => handleAction(selectedTx.id, 'mark-paid')}
                                                         className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-all cursor-pointer flex items-center gap-1.5"
@@ -546,7 +546,7 @@ export default function TransactionsIndex({ transactions, filters, serverKey, me
                                                         <CheckCircle2 className="size-3.5" /> Ubah ke Settlement (200)
                                                     </button>
                                                 )}
-                                                {selectedTx.transaction_status !== 'expire' && (
+                                                {selectedTx.transaction_status === 'pending' && (
                                                     <button
                                                         onClick={() => handleAction(selectedTx.id, 'mark-expire')}
                                                         className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium transition-all cursor-pointer flex items-center gap-1.5"
@@ -554,7 +554,7 @@ export default function TransactionsIndex({ transactions, filters, serverKey, me
                                                         <Clock className="size-3.5" /> Ubah ke Expire (407)
                                                     </button>
                                                 )}
-                                                {selectedTx.transaction_status !== 'cancel' && (
+                                                {selectedTx.transaction_status === 'pending' && (
                                                     <button
                                                         onClick={() => handleAction(selectedTx.id, 'mark-cancel')}
                                                         className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium transition-all cursor-pointer flex items-center gap-1.5"
