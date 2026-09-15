@@ -54,7 +54,7 @@ class SettingController extends Controller
                 'client_key' => $apiKey->client_key,
                 'is_production' => $apiKey->is_production,
             ],
-            'appUrl' => url('/'),
+            'appUrl' => rtrim((string) config('app.url'), '/'),
         ]);
     }
 

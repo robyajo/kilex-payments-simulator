@@ -18,13 +18,17 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function Docs() {
+interface Props {
+    appUrl: string;
+}
+
+export default function Docs({ appUrl }: Props) {
     const [copied, setCopied] = useState<string | null>(null);
     const [activeLang, setActiveLang] = useState<'php' | 'node' | 'python' | 'curl'>('php');
     const [playgroundProvider, setPlaygroundProvider] = useState<'midtrans' | 'stripe'>('midtrans');
     const [playgroundEndpoint, setPlaygroundEndpoint] = useState('charge');
     const [playgroundKey, setPlaygroundKey] = useState('');
-    const [playgroundUrl, setPlaygroundUrl] = useState('/api/v2/charge');
+    const [playgroundUrl, setPlaygroundUrl] = useState(`${appUrl}/api/v2/charge`);
     const [playgroundBody, setPlaygroundBody] = useState(JSON.stringify({
         payment_type: 'qris',
         transaction_details: { order_id: 'DOCS-QRIS-001', gross_amount: 150000 },
@@ -47,16 +51,16 @@ export default function Docs() {
         if (provider === 'midtrans') {
             const defaults: Record<string, { url: string; body: object }> = {
                 snap: {
-                    url: '/api/snap/v1/transactions',
+                    url: `${appUrl}/api/snap/v1/transactions`,
                     body: { transaction_details: { order_id: 'DOCS-SNAP-001', gross_amount: 150000 } },
                 },
                 charge: {
-                    url: '/api/v2/charge',
+                    url: `${appUrl}/api/v2/charge`,
                     body: { payment_type: 'qris', transaction_details: { order_id: 'DOCS-QRIS-001', gross_amount: 150000 } },
                 },
-                status: { url: '/api/v2/DOCS-QRIS-001/status', body: {} },
-                cancel: { url: '/api/v2/DOCS-QRIS-001/cancel', body: {} },
-                expire: { url: '/api/v2/DOCS-QRIS-001/expire', body: {} },
+                status: { url: `${appUrl}/api/v2/DOCS-QRIS-001/status`, body: {} },
+                cancel: { url: `${appUrl}/api/v2/DOCS-QRIS-001/cancel`, body: {} },
+                expire: { url: `${appUrl}/api/v2/DOCS-QRIS-001/expire`, body: {} },
             };
             const selected = defaults[endpoint] ?? defaults.charge;
             setPlaygroundUrl(selected.url);
@@ -64,17 +68,17 @@ export default function Docs() {
         } else {
             const defaults: Record<string, { url: string; body: object }> = {
                 intent: {
-                    url: '/api/stripe/v1/payment_intents',
+                    url: `${appUrl}/api/stripe/v1/payment_intents`,
                     body: { amount: 150000, currency: 'idr', metadata: { order_id: 'DOCS-STRIPE-001' } },
                 },
-                retrieve: { url: '/api/stripe/v1/payment_intents/pi_replace_me', body: {} },
-                confirm: { url: '/api/stripe/v1/payment_intents/pi_replace_me/confirm', body: {} },
+                retrieve: { url: `${appUrl}/api/stripe/v1/payment_intents/pi_replace_me`, body: {} },
+                confirm: { url: `${appUrl}/api/stripe/v1/payment_intents/pi_replace_me/confirm`, body: {} },
                 session: {
                     url: '/api/stripe/v1/checkout/sessions',
                     body: {
                         line_items: [{ price_data: { currency: 'idr', unit_amount: 150000, product_data: { name: 'Documentation test item' } }, quantity: 1 }],
-                        success_url: `${window.location.origin}/docs?success=1`,
-                        cancel_url: `${window.location.origin}/docs?cancelled=1`,
+                        success_url: `${appUrl}/docs?success=1`,
+                        cancel_url: `${appUrl}/docs?cancelled=1`,
                     },
                 },
             };
@@ -215,15 +219,15 @@ export default function Docs() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs">
                                     <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
                                         <div className="text-[10px] text-neutral-500 font-sans">Snap API Base URL</div>
-                                        <div className="text-blue-600 dark:text-blue-400 font-bold">http://localhost:8001/api/snap/v1</div>
+                                        <div className="text-blue-600 dark:text-blue-400 font-bold">{appUrl}/api/snap/v1</div>
                                     </div>
                                     <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
                                         <div className="text-[10px] text-neutral-500 font-sans">Core API Base URL</div>
-                                        <div className="text-blue-600 dark:text-blue-400 font-bold">http://localhost:8001/api/v2</div>
+                                        <div className="text-blue-600 dark:text-blue-400 font-bold">{appUrl}/api/v2</div>
                                     </div>
                                     <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
                                         <div className="text-[10px] text-neutral-500 font-sans">Stripe Test API Base URL</div>
-                                        <div className="text-indigo-600 dark:text-indigo-400 font-bold">http://localhost:8001/api/stripe/v1</div>
+                                        <div className="text-indigo-600 dark:text-indigo-400 font-bold">{appUrl}/api/stripe/v1</div>
                                     </div>
                                 </div>
                             </div>
@@ -355,7 +359,7 @@ export default function Docs() {
                                 </div>
                             </div>
                             <pre className="p-4 rounded-xl bg-neutral-950 text-neutral-200 font-mono text-xs overflow-x-auto border border-neutral-800">
-{`curl -X POST http://localhost:8001/api/stripe/v1/payment_intents \\
+{`curl -X POST ${appUrl}/api/stripe/v1/payment_intents \\
   -H "Authorization: Bearer sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -474,7 +478,7 @@ export default function Docs() {
                                 <pre className="p-4 rounded-xl bg-neutral-950 text-emerald-400 font-mono text-xs overflow-x-auto border border-neutral-800">
 {`{
   "token": "snap-token-89b1c7a2-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "redirect_url": "http://localhost:8001/snap/v1/pay/snap-token-89b1c7a2-xxxx"
+  "redirect_url": "${appUrl}/snap/v1/pay/snap-token-89b1c7a2-xxxx"
 }`}
                                 </pre>
                             </div>
@@ -500,7 +504,7 @@ export default function Docs() {
                             <div className="space-y-2">
                                 <div className="text-xs text-neutral-400">Contoh Request QRIS:</div>
                                 <pre className="p-4 rounded-xl bg-neutral-950 text-neutral-200 font-mono text-xs overflow-x-auto border border-neutral-800">
-{`curl -X POST http://localhost:8001/api/v2/charge \\
+{`curl -X POST ${appUrl}/api/v2/charge \\
   -u "SB-Mid-server-xxxx:" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -522,8 +526,8 @@ export default function Docs() {
   "payment_type": "qris",
   "transaction_status": "pending",
   "qr_string": "000201010212...",
-  "qr_url": "http://localhost:8001/snap/v1/pay/snap-token-xxxx",
-  "payment_url": "http://localhost:8001/snap/v1/pay/snap-token-xxxx"
+  "qr_url": "${appUrl}/snap/v1/pay/snap-token-xxxx",
+  "payment_url": "${appUrl}/snap/v1/pay/snap-token-xxxx"
 }`}
                                 </pre>
                                 <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
@@ -541,7 +545,7 @@ export default function Docs() {
   "transaction_status": "pending",
   "biller_code": "70012",
   "bill_key": "9912345678",
-  "payment_url": "http://localhost:8001/snap/v1/pay/snap-token-xxxx"
+  "payment_url": "${appUrl}/snap/v1/pay/snap-token-xxxx"
 }`}
                                 </pre>
                             </div>
@@ -770,7 +774,7 @@ $params = [
 ];
 
 $snapToken = \\Midtrans\\Snap::getSnapToken($params);
-$redirectUrl = "http://localhost:8001/snap/v1/pay/{$snapToken}";`}
+$redirectUrl = "${appUrl}/snap/v1/pay/{$snapToken}";`}
                                 </pre>
                             )}
 
@@ -814,7 +818,7 @@ payload = {
 }
 
 response = requests.post(
-    "http://localhost:8001/api/snap/v1/transactions",
+    "${appUrl}/api/snap/v1/transactions",
     headers={"Authorization": auth_header, "Content-Type": "application/json"},
     json=payload
 )
@@ -825,7 +829,7 @@ print(response.json())`}
 
                             {activeLang === 'curl' && (
                                 <pre className="p-4 rounded-xl bg-neutral-950 text-neutral-200 font-mono text-xs overflow-x-auto border border-neutral-800">
-{`curl -X POST 'http://localhost:8001/api/snap/v1/transactions' \\
+{`curl -X POST '${appUrl}/api/snap/v1/transactions' \\
   -u 'SB-Mid-server-kilex9876543210demo:' \\
   -H 'Content-Type: application/json' \\
   -d '{
